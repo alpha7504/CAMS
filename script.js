@@ -765,28 +765,27 @@ setInterval(async () => {
 
 }, 2000);
 
-async function importFromClipboard(){
 
-    try{
 
-        const text = await navigator.clipboard.readText();
 
-        if(!text.includes("novelquickapp.com/actor/")){
-            alert("Clipboard does not contain an actor URL.");
-            return;
+
+/* ===============================
+   BACKGROUND IMPORT LISTENER
+================================ */
+
+if (typeof GM_addValueChangeListener !== "undefined") {
+
+    GM_addValueChangeListener("camsImportURL",
+        function(name, oldValue, newValue){
+
+            if(newValue){
+
+                document.getElementById("actorUrl").value = newValue;
+                importActorFromURL();
+            }
         }
-
-        document.getElementById("actorUrl").value = text;
-
-        importActorFromURL();
-
-    }catch(err){
-        alert("Clipboard permission required.");
-    }
+    );
 }
-
-
-
 
 
 
