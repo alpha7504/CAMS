@@ -807,5 +807,25 @@ window.addEventListener("load", () => {
 
 });
 
+/* ===============================
+   LIVE IMPORT CHANNEL
+================================ */
+
+const camsChannel = new BroadcastChannel("cams_import");
+
+camsChannel.onmessage = (event) => {
+
+    const actorUrl = event.data;
+
+    console.log("Live import received:", actorUrl);
+
+    const input = document.getElementById("actorUrl");
+    if (!input) return;
+
+    input.value = actorUrl;
+
+    importActorFromURL();
+};
+
 
 render();
