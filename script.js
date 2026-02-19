@@ -765,28 +765,42 @@ console.log("CAMS catalog loaded");
 search.addEventListener("input", render);
 
 
+
+
 /* ===============================
    AUTO IMPORT FROM URL PARAM
 ================================ */
 
-window.addEventListener("load", () => {
+window.addEventListener("DOMContentLoaded", () => {
 
     const params = new URLSearchParams(window.location.search);
     const importUrl = params.get("import");
 
+    console.log("Import param:", importUrl);
+
     if(!importUrl) return;
 
-    console.log("Auto importing:", importUrl);
+    const input = document.getElementById("actorUrl");
 
-    document.getElementById("actorUrl").value = importUrl;
+    if(!input){
+        console.log("actorUrl input not found");
+        return;
+    }
 
-    setTimeout(() => {
-        importActorFromURL();
+    input.value = importUrl;
 
-        // remove parameter so refresh won't re-import
-        window.history.replaceState({}, "", window.location.pathname);
+    setTimeout(async () => {
 
-    }, 600);
+        await importActorFromURL();
+
+        // remove parameter so refresh won't repeat
+        window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+        );
+
+    }, 700);
 });
 
 
