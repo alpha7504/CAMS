@@ -1,8 +1,7 @@
 /* ===============================
    ELEMENT REFERENCES
 ================================ */
-let lastImportedFromClipboard =
-    localStorage.getItem("lastImportedFromClipboard") || "";
+
 const pasteBox = document.getElementById("pasteBox");
 const eng = document.getElementById("eng");
 const cn = document.getElementById("cn");
@@ -736,34 +735,7 @@ function deleteAllProfiles() {
    CLIPBOARD AUTO IMPORT (LOCAL SAFE)
 ================================ */
 
-let lastClipboard = "";
 
-setInterval(async () => {
-
-    try {
-
-        const text = await navigator.clipboard.readText();
-
-        if (
-            text &&
-            text !== lastClipboard &&
-            text.includes("novelquickapp.com/actor/")
-        ) {
-            lastClipboard = text;
-
-            console.log("Clipboard actor detected:", text);
-
-            const input = document.getElementById("actorUrl");
-            input.value = text;
-
-            importActorFromURL();
-        }
-
-    } catch (e) {
-        // clipboard permission not granted yet
-    }
-
-}, 2000);
 
 
 
@@ -791,5 +763,31 @@ if (typeof GM_addValueChangeListener !== "undefined") {
 
 console.log("CAMS catalog loaded");
 search.addEventListener("input", render);
+
+
+/* ===============================
+   AUTO IMPORT FROM URL PARAM
+================================ */
+
+window.addEventListener("load", () => {
+
+    const params = new URLSearchParams(window.location.search);
+    const importUrl = params.get("import");
+
+    if(!importUrl) return;
+
+    console.log("Auto importing:", importUrl);
+
+    document.getElementById("actorUrl").value = importUrl;
+
+    setTimeout(() => {
+        importActorFromURL();
+
+        // remove parameter so refresh won't re-import
+        window.history.replaceState({}, "", window.location.pathname);
+
+    }, 600);
+});
+
 
 render();
