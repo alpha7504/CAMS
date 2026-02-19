@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Catalog</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h2>Smart Catalog</h2>
+
+    <div class="panel">
+        <hr>
+
+        <textarea id="bulkInput" placeholder="Paste names (one per line)" rows="6"
+            style="width:100%;"></textarea>
+
+        <br>
+
+        <button onclick="bulkImport()">Bulk Import Names</button>
+
+        <input type="file" id="bulkFile" accept=".txt" style="display:none" onchange="bulkImportFile(event)">
+
+        <button onclick="document.getElementById('bulkFile').click()">
+            Import From TXT File
+        </button>
+
+        <input id="eng" placeholder="English Name">
+        <input id="cn" placeholder="Native Name">
+        <input id="tags" placeholder="Tags (comma separated)">
+
+        <input id="imgUrl" placeholder="Image URL (optional)">
+        <button onclick="loadImageFromURL()">Load Image</button>
+
+        <div id="pasteBox">Paste Image Here (Ctrl+V)</div>
+
+        <button onclick="saveActor()">Add / Update </button>
+        <input id="actorUrl" placeholder="Paste page URL">
+
+        <button onclick="importActorFromURL()">
+            Import From Page
+        </button>
+        <button onclick="importFromClipboard()">
+            Import From Clipboard
+        </button>
+
+        <br><br>
+        <button onclick="exportData()">Export Backup</button>
+        <input type="file" id="importFile" onchange="importData(event)">
+        <button onclick="document.getElementById('importFile').click()">
+            Import Backup
+        </button>
+
+        <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none;">
+        <button style="background:#d9534f;color:white;" onclick="deleteAllProfiles()">
+            Delete ALL Profiles
+        </button>
+    </div>
+
+
+    <div class="panel">
+        <input id="search" placeholder="Search actors...">
+    </div>
+
+    <div id="grid" class="grid"></div>
+
+    <!-- POPUP -->
+    <div id="popup" class="popup">
+        <div class="popup-inner" id="popupContent"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin-pro/3.27.0/index.min.js"
+        integrity="sha512-aE0DCH0yU7dYVnse3UBrM68g/oMZl8nhjoCYXfYxZbEOi31MHnzMGR0Kbv9CBvZEz0sSn2J7i5EngSVhrbxJig=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="script.js"></script>
+
+
+</body>
+
+</html>
