@@ -771,36 +771,40 @@ search.addEventListener("input", render);
    AUTO IMPORT FROM URL PARAM
 ================================ */
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
 
     const params = new URLSearchParams(window.location.search);
     const importUrl = params.get("import");
 
     console.log("Import param:", importUrl);
 
-    if(!importUrl) return;
+    if (!importUrl) return;
 
-    const input = document.getElementById("actorUrl");
+    // wait a little to ensure UI fully ready
+    setTimeout(() => {
 
-    if(!input){
-        console.log("actorUrl input not found");
-        return;
-    }
+        const input = document.getElementById("actorUrl");
 
-    input.value = importUrl;
+        if (!input) {
+            console.log("actorUrl still missing");
+            return;
+        }
 
-    setTimeout(async () => {
+        input.value = importUrl;
 
-        await importActorFromURL();
+        importActorFromURL().then(() => {
 
-        // remove parameter so refresh won't repeat
-        window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname
-        );
+            // remove parameter so refresh won't repeat
+            window.history.replaceState(
+                {},
+                document.title,
+                window.location.pathname
+            );
 
-    }, 700);
+        });
+
+    }, 1200); // IMPORTANT: longer delay for GitHub Pages
+
 });
 
 
