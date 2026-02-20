@@ -627,38 +627,42 @@ function getSortedActors() {
    RENDER
 ================================ */
 
-function render() {
+/* ===============================
+   RENDER
+================================ */
 
+function render() {
     const q = search.value.toLowerCase();
     grid.innerHTML = "";
 
+    // We use the sorted list but find the REAL index for actions
     getSortedActors()
-        //.sort((a, b) => (a.pinyin || "").localeCompare(b.pinyin || ""))
         .filter(a =>
             (a.english || "").toLowerCase().includes(q) ||
             (a.chinese || "").includes(q) ||
             (a.tags || []).join().toLowerCase().includes(q)
         )
-        .forEach((a, i) => {
+        .forEach((a) => {
+            // Find the actual index in the master array
+            const realIndex = actors.indexOf(a);
 
             grid.innerHTML += `
         <div class="card">
             <img src="${a.image ? a.image : PLACEHOLDER_IMAGE}"
-     onerror="this.onerror=null;this.src='assets/pp.png';"
-     onclick="openProfile(${i})">
+                 onerror="this.onerror=null;this.src='assets/pp.png';"
+                 onclick="openProfile(${realIndex})">
             <div class="card-body">
                 <b>${a.english}</b><br>
                 ${a.chinese}<br>
-                ${(a.tags || []).map(t => `<span class="tag">${t}</span>`).join("")}
+                ${(a.tags || []).map(t => '<span class="tag">' + t + '</span>').join("")}
                 <br><br>
-                    <div class="card-actions">
-                        <button onclick="toggleFavorite(${i})">
-                            ${a.favorite ? "⭐" : "☆"}
-                        </button>
-                        <button onclick="editActor(${i})">Edit</button>
-                        <button onclick="deleteActor(${i})">Delete</button>
-                    </div>
-
+                <div class="card-actions">
+                    <button onclick="toggleFavorite(${realIndex})">
+                        ${a.favorite ? "⭐" : "☆"}
+                    </button>
+                    <button onclick="editActor(${realIndex})">Edit</button>
+                    <button onclick="deleteActor(${realIndex})">Delete</button>
+                </div>
             </div>
         </div>`;
         });
