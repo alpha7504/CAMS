@@ -1,7 +1,9 @@
 /* ===============================
    ELEMENT REFERENCES
 ================================ */
-
+function saveActors(){
+    localStorage.setItem("actors", JSON.stringify(actors));
+}
 const pasteBox = document.getElementById("pasteBox");
 const eng = document.getElementById("eng");
 const cn = document.getElementById("cn");
@@ -412,7 +414,7 @@ function saveActor() {
         actors.push(data);
     }
 
-    localStorage.setItem("actors", JSON.stringify(actors));
+    saveActors();
 
     eng.value = "";
     cn.value = "";
@@ -430,14 +432,14 @@ function saveActor() {
 
 function toggleFavorite(i) {
     actors[i].favorite = !actors[i].favorite;
-    localStorage.setItem("actors", JSON.stringify(actors));
+    saveActors();
     render();
 }
 
 function deleteActor(i) {
     if (confirm("Delete actor?")) {
         actors.splice(i, 1);
-        localStorage.setItem("actors", JSON.stringify(actors));
+        saveActors();
         render();
     }
 }
@@ -492,7 +494,7 @@ function importData(e) {
     const reader = new FileReader();
     reader.onload = ev => {
         actors = JSON.parse(ev.target.result);
-        localStorage.setItem("actors", JSON.stringify(actors));
+        saveActors();
         render();
     };
     reader.readAsText(file);
@@ -567,7 +569,7 @@ async function importActorFromURL(){
         actors.push(actor);
         nameDict[chinese] = english;
 
-        localStorage.setItem("actors",JSON.stringify(actors));
+        saveActors();
         localStorage.setItem("nameDict",JSON.stringify(nameDict));
 
         render();
@@ -683,7 +685,7 @@ async function bulkImport() {
         added++;
     }
 
-    localStorage.setItem("actors", JSON.stringify(actors));
+    saveActors();
     localStorage.setItem("nameDict", JSON.stringify(nameDict));
 
     render();
