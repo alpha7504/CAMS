@@ -120,18 +120,6 @@ function generatePinyin(chinese) {
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
-    const sortSelect = document.getElementById("sortMode");
-    if (!sortSelect) return;
-
-    sortSelect.value = sortMode;
-
-    sortSelect.addEventListener("change", () => {
-        sortMode = sortSelect.value;
-        localStorage.setItem("cams_sortMode", sortMode);
-        render();
-    });
-});
 
 
 
@@ -597,7 +585,43 @@ async function importActorFromURL() {
     }
 }
 
+function getSortedActors() {
 
+    let list = [...actors]; // IMPORTANT copy
+
+    switch (sortMode) {
+
+        case "date_asc":
+            list.sort((a, b) => a.id - b.id);
+            break;
+
+        case "date_desc":
+            list.sort((a, b) => b.id - a.id);
+            break;
+
+        case "name_asc":
+            list.sort((a, b) =>
+                (a.pinyin || a.english || "")
+                    .localeCompare(b.pinyin || b.english || "")
+            );
+            break;
+
+        case "name_desc":
+            list.sort((a, b) =>
+                (b.pinyin || b.english || "")
+                    .localeCompare(a.pinyin || a.english || "")
+            );
+            break;
+
+        case "favorite":
+            list.sort((a, b) =>
+                (b.favorite === true) - (a.favorite === true)
+            );
+            break;
+    }
+
+    return list;
+}
 
 /* ===============================
    RENDER
@@ -780,43 +804,7 @@ console.log("CAMS catalog loaded");
 search.addEventListener("input", render);
 
 
-function getSortedActors() {
 
-    let list = [...actors]; // IMPORTANT copy
-
-    switch (sortMode) {
-
-        case "date_asc":
-            list.sort((a, b) => a.id - b.id);
-            break;
-
-        case "date_desc":
-            list.sort((a, b) => b.id - a.id);
-            break;
-
-        case "name_asc":
-            list.sort((a, b) =>
-                (a.pinyin || a.english || "")
-                    .localeCompare(b.pinyin || b.english || "")
-            );
-            break;
-
-        case "name_desc":
-            list.sort((a, b) =>
-                (b.pinyin || b.english || "")
-                    .localeCompare(a.pinyin || a.english || "")
-            );
-            break;
-
-        case "favorite":
-            list.sort((a, b) =>
-                (b.favorite === true) - (a.favorite === true)
-            );
-            break;
-    }
-
-    return list;
-}
 
 /* ===============================
    AUTO IMPORT + AUTO CLOSE
@@ -893,6 +881,20 @@ function checkImportQueue() {
 
 setInterval(checkImportQueue, 2000);
 
+
+document.addEventListener("DOMContentLoaded", () => {
+    const sortSelect = document.getElementById("sortMode");
+    if (!sortSelect) return;
+
+    sortSelect.value = sortMode;
+
+    sortSelect.addEventListener("change", () => {
+        sortMode = sortSelect.value;
+        localStorage.setItem("cams_sortMode", sortMode);
+        render();
+    });
+});
+
 /* ===============================
    LIVE IMPORT CHANNEL
 ================================ */
@@ -912,6 +914,7 @@ camsChannel.onmessage = (event) => {
 
     importActorFromURL();
 };
+
 
 
 render();
