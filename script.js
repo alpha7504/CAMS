@@ -23,7 +23,6 @@ let nameDict =
 let pastedImage = "";
 let editIndex = null;
 let lookupTimer = null;
-let lastImportedActorId = null;
 
 
 const PLACEHOLDER_IMAGE = "assets/pp.png";
@@ -571,9 +570,8 @@ async function importActorFromURL() {
         localStorage.setItem("nameDict", JSON.stringify(nameDict));
 
         actors.push(actor);
-        lastImportedActorId = actor.id;
+
         render();
-        highlightImportedActor();
 
         alert("Actor imported successfully.");
         return true;
