@@ -633,7 +633,7 @@ function render() {
     grid.innerHTML = "";
 
     getSortedActors()
-        .sort((a, b) => (a.pinyin || "").localeCompare(b.pinyin || ""))
+        //.sort((a, b) => (a.pinyin || "").localeCompare(b.pinyin || ""))
         .filter(a =>
             (a.english || "").toLowerCase().includes(q) ||
             (a.chinese || "").includes(q) ||
