@@ -846,23 +846,6 @@ window.addEventListener("load", () => {
 });
 
 /* ===============================
-   DARK MODE LOGIC
-================================ */
-
-function toggleDarkMode() {
-    const isDark = document.body.classList.toggle("dark-mode");
-    localStorage.setItem("cams_darkMode", isDark);
-}
-
-// Load preference on startup
-window.addEventListener("DOMContentLoaded", () => {
-    const savedDark = localStorage.getItem("cams_darkMode");
-    if (savedDark === "true") {
-        document.body.classList.add("dark-mode");
-    }
-});
-
-/* ===============================
    IMPORT QUEUE LISTENER
 ================================ */
 
