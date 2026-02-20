@@ -15,8 +15,7 @@
     <div class="panel">
         <hr>
 
-        <textarea id="bulkInput" placeholder="Paste names (one per line)" rows="6"
-            style="width:100%;"></textarea>
+        <textarea id="bulkInput" placeholder="Paste names (one per line)" rows="6" style="width:100%;"></textarea>
 
         <br>
 
@@ -63,6 +62,13 @@
 
     <div class="panel">
         <input id="search" placeholder="Search...">
+        <select id="sortMode">
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+            <option value="name_asc">Name A → Z</option>
+            <option value="name_desc">Name Z → A</option>
+            <option value="favorite">Favorites First</option>
+        </select>
     </div>
 
     <div id="grid" class="grid"></div>

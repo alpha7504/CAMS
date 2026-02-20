@@ -1,9 +1,11 @@
 /* ===============================
    ELEMENT REFERENCES
 ================================ */
-function saveActors(){
+function saveActors() {
     localStorage.setItem("actors", JSON.stringify(actors));
 }
+let sortMode =
+    localStorage.getItem("cams_sortMode") || "date_desc";
 const pasteBox = document.getElementById("pasteBox");
 const eng = document.getElementById("eng");
 const cn = document.getElementById("cn");
@@ -118,7 +120,18 @@ function generatePinyin(chinese) {
 }
 
 
+document.addEventListener("DOMContentLoaded", () => {
+    const sortSelect = document.getElementById("sortMode");
+    if (!sortSelect) return;
 
+    sortSelect.value = sortMode;
+
+    sortSelect.addEventListener("change", () => {
+        sortMode = sortSelect.value;
+        localStorage.setItem("cams_sortMode", sortMode);
+        render();
+    });
+});
 
 
 
@@ -500,21 +513,21 @@ function importData(e) {
     reader.readAsText(file);
 }
 
-async function importActorFromURL(){
+async function importActorFromURL() {
 
     const pageUrl =
         document.getElementById("actorUrl").value.trim();
 
-    if(!pageUrl){
+    if (!pageUrl) {
         alert("Enter actor URL.");
         return false;
     }
 
-    try{
+    try {
 
         const proxy =
-        "https://corsproxy.io/?" +
-        encodeURIComponent(pageUrl);
+            "https://corsproxy.io/?" +
+            encodeURIComponent(pageUrl);
 
         const res = await fetch(proxy);
         const html = await res.text();
@@ -524,7 +537,7 @@ async function importActorFromURL(){
             /<h1[^>]*>(.*?)<\/h1>/i
         );
 
-        if(!nameMatch){
+        if (!nameMatch) {
             alert("Actor name not found.");
             return false;
         }
@@ -532,7 +545,7 @@ async function importActorFromURL(){
         const chinese = nameMatch[1].trim();
 
         /* ===== DUPLICATE CHECK ===== */
-        if(actors.find(a => a.chinese === chinese)){
+        if (actors.find(a => a.chinese === chinese)) {
             alert("Actor already exists.");
             return false;
         }
@@ -544,9 +557,9 @@ async function importActorFromURL(){
             /https?:\/\/[^"' ]*fqnovelpic[^"' ]*\.jpeg[^"' ]*/i
         );
 
-        if(imgMatch){
+        if (imgMatch) {
             finalImage =
-                imgMatch[0].replace(/&amp;/g,"&");
+                imgMatch[0].replace(/&amp;/g, "&");
         }
 
         /* ===== ENGLISH NAME ===== */
@@ -557,27 +570,27 @@ async function importActorFromURL(){
             "";
 
         const actor = {
-            id: Date.now()+Math.random(),
+            id: Date.now() + Math.random(),
             english,
             chinese,
-            pinyin:getPinyinKey(english),
-            tags:[],
-            favorite:false,
-            image:finalImage
+            pinyin: getPinyinKey(english),
+            tags: [],
+            favorite: false,
+            image: finalImage
         };
 
         actors.push(actor);
         nameDict[chinese] = english;
 
         saveActors();
-        localStorage.setItem("nameDict",JSON.stringify(nameDict));
+        localStorage.setItem("nameDict", JSON.stringify(nameDict));
 
         render();
 
         alert("Actor imported successfully.");
         return true;
 
-    }catch(err){
+    } catch (err) {
         console.error(err);
         alert("Import failed.");
         return false;
@@ -595,7 +608,7 @@ function render() {
     const q = search.value.toLowerCase();
     grid.innerHTML = "";
 
-    actors
+    getSortedActors()
         .sort((a, b) => (a.pinyin || "").localeCompare(b.pinyin || ""))
         .filter(a =>
             (a.english || "").toLowerCase().includes(q) ||
@@ -750,9 +763,9 @@ function deleteAllProfiles() {
 if (typeof GM_addValueChangeListener !== "undefined") {
 
     GM_addValueChangeListener("camsImportURL",
-        function(name, oldValue, newValue){
+        function (name, oldValue, newValue) {
 
-            if(newValue){
+            if (newValue) {
 
                 document.getElementById("actorUrl").value = newValue;
                 importActorFromURL();
@@ -767,7 +780,43 @@ console.log("CAMS catalog loaded");
 search.addEventListener("input", render);
 
 
+function getSortedActors() {
 
+    let list = [...actors]; // IMPORTANT copy
+
+    switch (sortMode) {
+
+        case "date_asc":
+            list.sort((a, b) => a.id - b.id);
+            break;
+
+        case "date_desc":
+            list.sort((a, b) => b.id - a.id);
+            break;
+
+        case "name_asc":
+            list.sort((a, b) =>
+                (a.pinyin || a.english || "")
+                    .localeCompare(b.pinyin || b.english || "")
+            );
+            break;
+
+        case "name_desc":
+            list.sort((a, b) =>
+                (b.pinyin || b.english || "")
+                    .localeCompare(a.pinyin || a.english || "")
+            );
+            break;
+
+        case "favorite":
+            list.sort((a, b) =>
+                (b.favorite === true) - (a.favorite === true)
+            );
+            break;
+    }
+
+    return list;
+}
 
 /* ===============================
    AUTO IMPORT + AUTO CLOSE
@@ -810,27 +859,27 @@ window.addEventListener("load", () => {
    IMPORT QUEUE LISTENER
 ================================ */
 
-function checkImportQueue(){
+function checkImportQueue() {
 
     const key = "CAMS_IMPORT_QUEUE";
     const queue =
         JSON.parse(localStorage.getItem(key) || "[]");
 
-    if(!queue.length) return;
+    if (!queue.length) return;
 
     queue.forEach(item => {
 
-        if(actors.find(a=>a.chinese===item.chinese))
+        if (actors.find(a => a.chinese === item.chinese))
             return;
 
         const actor = {
-            id: Date.now()+Math.random(),
+            id: Date.now() + Math.random(),
             chinese: item.chinese,
             english: "",
-            pinyin:"",
-            tags:[],
-            favorite:false,
-            image:item.image
+            pinyin: "",
+            tags: [],
+            favorite: false,
+            image: item.image
         };
 
         actors.push(actor);
