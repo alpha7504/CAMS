@@ -711,7 +711,7 @@ function bulkImportFile(event) {
 function deleteAllProfiles() {
 
     const confirm1 = confirm(
-        "Delete ALL actor profiles?\nThis cannot be undone."
+        "Delete ALL profiles?\nThis cannot be undone."
     );
 
     if (!confirm1) return;
@@ -770,7 +770,7 @@ search.addEventListener("input", render);
 
 
 /* ===============================
-   AUTO IMPORT FROM URL PARAM
+   AUTO IMPORT + AUTO CLOSE
 ================================ */
 
 window.addEventListener("load", () => {
@@ -778,35 +778,32 @@ window.addEventListener("load", () => {
     const params = new URLSearchParams(window.location.search);
     const importUrl = params.get("import");
 
-    console.log("Import param:", importUrl);
-
     if (!importUrl) return;
 
-    // wait a little to ensure UI fully ready
-    setTimeout(() => {
+    console.log("Auto importing:", importUrl);
 
-        const input = document.getElementById("actorUrl");
+    const input = document.getElementById("actorUrl");
+    if (!input) return;
 
-        if (!input) {
-            console.log("actorUrl still missing");
-            return;
+    input.value = importUrl;
+
+    setTimeout(async () => {
+
+        const success = await importActorFromURL();
+
+        // remove URL param (safety)
+        window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+        );
+
+        // ⭐ auto close if opened by bookmarklet
+        if (success && window.opener) {
+            window.close();
         }
 
-        input.value = importUrl;
-
-        importActorFromURL().then(() => {
-
-            // remove parameter so refresh won't repeat
-            window.history.replaceState(
-                {},
-                document.title,
-                window.location.pathname
-            );
-
-        });
-
-    }, 1200); // IMPORTANT: longer delay for GitHub Pages
-
+    }, 800);
 });
 
 /* ===============================
