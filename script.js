@@ -807,6 +807,44 @@ window.addEventListener("load", () => {
 });
 
 /* ===============================
+   IMPORT QUEUE LISTENER
+================================ */
+
+function checkImportQueue(){
+
+    const key = "CAMS_IMPORT_QUEUE";
+    const queue =
+        JSON.parse(localStorage.getItem(key) || "[]");
+
+    if(!queue.length) return;
+
+    queue.forEach(item => {
+
+        if(actors.find(a=>a.chinese===item.chinese))
+            return;
+
+        const actor = {
+            id: Date.now()+Math.random(),
+            chinese: item.chinese,
+            english: "",
+            pinyin:"",
+            tags:[],
+            favorite:false,
+            image:item.image
+        };
+
+        actors.push(actor);
+    });
+
+    saveActors();
+    render();
+
+    localStorage.removeItem(key);
+}
+
+setInterval(checkImportQueue, 2000);
+
+/* ===============================
    LIVE IMPORT CHANNEL
 ================================ */
 
