@@ -596,7 +596,7 @@ function render() {
     const q = search.value.toLowerCase();
     grid.innerHTML = "";
 
-    [...actors]
+    actors
         .sort((a, b) => (a.pinyin || "").localeCompare(b.pinyin || ""))
         .filter(a =>
             (a.english || "").toLowerCase().includes(q) ||
@@ -731,46 +731,6 @@ function deleteAllProfiles() {
 
     alert("All profiles deleted.");
 }
-
-
-
-function highlightImportedActor() {
-
-    if (!lastImportedActorId) return;
-
-    // wait for DOM + paint + layout
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-
-            const card = document.querySelector(
-                `[data-actor-id="${lastImportedActorId}"]`
-            );
-
-            if (!card) {
-                console.log("Highlight target not found");
-                return;
-            }
-
-            card.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-
-            card.classList.add("highlight");
-
-            setTimeout(() => {
-                card.classList.remove("highlight");
-            }, 2500);
-
-            lastImportedActorId = null;
-        });
-    });
-}
-
-
-
-
-
 
 /* ===============================
    BACKGROUND IMPORT LISTENER
