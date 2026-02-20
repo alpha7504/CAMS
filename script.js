@@ -564,14 +564,16 @@ async function importActorFromURL() {
             image: finalImage
         };
 
-        actors.push(actor);
-        lastImportedActorId = actor.id;
+
         nameDict[chinese] = english;
 
         localStorage.setItem("actors", JSON.stringify(actors));
         localStorage.setItem("nameDict", JSON.stringify(nameDict));
 
+        actors.push(actor);
+        lastImportedActorId = actor.id;
         render();
+        highlightImportedActor();
 
         alert("Actor imported successfully.");
         return true;
@@ -624,34 +626,6 @@ function render() {
             </div>
         </div>`;
         });
-    // highlight newly imported actor
-    if (lastImportedActorId) {
-
-        setTimeout(() => {
-
-            const card =
-                document.querySelector(
-                    `[data-actor-id="${lastImportedActorId}"]`
-                );
-
-            if (card) {
-
-                card.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-                card.classList.add("highlight");
-
-                setTimeout(() => {
-                    card.classList.remove("highlight");
-                }, 2500);
-            }
-
-            lastImportedActorId = null;
-
-        }, 200);
-    }
 }
 
 async function bulkImport() {
@@ -760,10 +734,36 @@ function deleteAllProfiles() {
 
 
 
-/* ===============================
-   CLIPBOARD AUTO IMPORT (LOCAL SAFE)
-================================ */
+function highlightImportedActor() {
 
+    if (!lastImportedActorId) return;
+
+    setTimeout(() => {
+
+        const card = document.querySelector(
+            `[data-actor-id="${lastImportedActorId}"]`
+        );
+
+        if (!card) {
+            console.log("Highlight target not found");
+            return;
+        }
+
+        card.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+        card.classList.add("highlight");
+
+        setTimeout(() => {
+            card.classList.remove("highlight");
+        }, 2500);
+
+        lastImportedActorId = null;
+
+    }, 400); // wait for DOM paint
+}
 
 
 
