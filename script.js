@@ -23,7 +23,7 @@ let nameDict =
 let pastedImage = "";
 let editIndex = null;
 let lookupTimer = null;
-
+let lastImportedActorId = null;
 
 
 const PLACEHOLDER_IMAGE = "assets/pp.png";
@@ -498,21 +498,21 @@ function importData(e) {
     reader.readAsText(file);
 }
 
-async function importActorFromURL(){
+async function importActorFromURL() {
 
     const pageUrl =
         document.getElementById("actorUrl").value.trim();
 
-    if(!pageUrl){
+    if (!pageUrl) {
         alert("Enter actor URL.");
         return false;
     }
 
-    try{
+    try {
 
         const proxy =
-        "https://corsproxy.io/?" +
-        encodeURIComponent(pageUrl);
+            "https://corsproxy.io/?" +
+            encodeURIComponent(pageUrl);
 
         const res = await fetch(proxy);
         const html = await res.text();
@@ -522,7 +522,7 @@ async function importActorFromURL(){
             /<h1[^>]*>(.*?)<\/h1>/i
         );
 
-        if(!nameMatch){
+        if (!nameMatch) {
             alert("Actor name not found.");
             return false;
         }
@@ -530,7 +530,7 @@ async function importActorFromURL(){
         const chinese = nameMatch[1].trim();
 
         /* ===== DUPLICATE CHECK ===== */
-        if(actors.find(a => a.chinese === chinese)){
+        if (actors.find(a => a.chinese === chinese)) {
             alert("Actor already exists.");
             return false;
         }
@@ -542,9 +542,9 @@ async function importActorFromURL(){
             /https?:\/\/[^"' ]*fqnovelpic[^"' ]*\.jpeg[^"' ]*/i
         );
 
-        if(imgMatch){
+        if (imgMatch) {
             finalImage =
-                imgMatch[0].replace(/&amp;/g,"&");
+                imgMatch[0].replace(/&amp;/g, "&");
         }
 
         /* ===== ENGLISH NAME ===== */
@@ -555,27 +555,28 @@ async function importActorFromURL(){
             "";
 
         const actor = {
-            id: Date.now()+Math.random(),
+            id: Date.now() + Math.random(),
             english,
             chinese,
-            pinyin:getPinyinKey(english),
-            tags:[],
-            favorite:false,
-            image:finalImage
+            pinyin: getPinyinKey(english),
+            tags: [],
+            favorite: false,
+            image: finalImage
         };
 
         actors.push(actor);
+        lastImportedActorId = actor.id;
         nameDict[chinese] = english;
 
-        localStorage.setItem("actors",JSON.stringify(actors));
-        localStorage.setItem("nameDict",JSON.stringify(nameDict));
+        localStorage.setItem("actors", JSON.stringify(actors));
+        localStorage.setItem("nameDict", JSON.stringify(nameDict));
 
         render();
 
         alert("Actor imported successfully.");
         return true;
 
-    }catch(err){
+    } catch (err) {
         console.error(err);
         alert("Import failed.");
         return false;
@@ -603,7 +604,7 @@ function render() {
         .forEach((a, i) => {
 
             grid.innerHTML += `
-        <div class="card">
+        <div class="card" data-actor-id="${a.id}">
             <img src="${a.image ? a.image : PLACEHOLDER_IMAGE}"
      onerror="this.onerror=null;this.src='assets/pp.png';"
      onclick="openProfile(${i})">
@@ -623,6 +624,34 @@ function render() {
             </div>
         </div>`;
         });
+    // highlight newly imported actor
+    if (lastImportedActorId) {
+
+        setTimeout(() => {
+
+            const card =
+                document.querySelector(
+                    `[data-actor-id="${lastImportedActorId}"]`
+                );
+
+            if (card) {
+
+                card.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                card.classList.add("highlight");
+
+                setTimeout(() => {
+                    card.classList.remove("highlight");
+                }, 2500);
+            }
+
+            lastImportedActorId = null;
+
+        }, 200);
+    }
 }
 
 async function bulkImport() {
@@ -748,9 +777,9 @@ function deleteAllProfiles() {
 if (typeof GM_addValueChangeListener !== "undefined") {
 
     GM_addValueChangeListener("camsImportURL",
-        function(name, oldValue, newValue){
+        function (name, oldValue, newValue) {
 
-            if(newValue){
+            if (newValue) {
 
                 document.getElementById("actorUrl").value = newValue;
                 importActorFromURL();
