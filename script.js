@@ -614,9 +614,7 @@ function getSortedActors() {
             break;
 
         case "favorite":
-            list.sort((a, b) =>
-                (b.favorite === true) - (a.favorite === true)
-            );
+            list.sort((a, b) => Number(b.favorite) - Number(a.favorite));
             break;
     }
 
