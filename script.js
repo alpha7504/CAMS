@@ -17,6 +17,14 @@ const popup = document.getElementById("popup");
 const popupContent = document.getElementById("popupContent");
 
 /* ===============================
+   INFINITE SCROLL STATE
+================================ */
+
+let renderBatchSize = 40;
+let renderPointer = 0;
+let filteredActors = [];
+
+/* ===============================
    DATA STORAGE
 ================================ */
 
@@ -630,23 +638,40 @@ function getSortedActors() {
 ================================ */
 
 function render() {
+
     const q = search.value.toLowerCase();
     grid.innerHTML = "";
 
-    // We use the sorted list but find the REAL index for actions
-    getSortedActors()
+    renderPointer = 0;
+
+    // prepare filtered + sorted list once
+    filteredActors = getSortedActors()
         .filter(a =>
             (a.english || "").toLowerCase().includes(q) ||
             (a.chinese || "").includes(q) ||
             (a.tags || []).join().toLowerCase().includes(q)
-        )
-        .forEach((a) => {
-            // Find the actual index in the master array
-            const realIndex = actors.indexOf(a);
+        );
 
-            grid.innerHTML += `
+    updateRecordInfo();
+
+    renderNextBatch();
+}
+
+function renderNextBatch() {
+
+    const slice = filteredActors.slice(
+        renderPointer,
+        renderPointer + renderBatchSize
+    );
+
+    slice.forEach((a) => {
+
+        const realIndex = actors.indexOf(a);
+
+        grid.innerHTML += `
         <div class="card">
-            <img src="${a.image ? a.image : PLACEHOLDER_IMAGE}"
+            <img loading="lazy"
+                 src="${a.image ? a.image : PLACEHOLDER_IMAGE}"
                  onerror="this.onerror=null;this.src='assets/pp.png';"
                  onclick="openProfile(${realIndex})">
             <div class="card-body">
@@ -663,7 +688,11 @@ function render() {
                 </div>
             </div>
         </div>`;
-        });
+    });
+
+    renderPointer += renderBatchSize;
+
+    updateRecordInfo();
 }
 
 async function bulkImport() {
@@ -845,6 +874,15 @@ window.addEventListener("load", () => {
     }, 800);
 });
 
+function updateRecordInfo(){
+
+    const el = document.getElementById("recordInfo");
+    if(!el) return;
+
+    el.textContent =
+        `Actors: ${actors.length} | Showing: ${Math.min(renderPointer, filteredActors.length)}`;
+}
+
 /* ===============================
    IMPORT QUEUE LISTENER
 ================================ */
@@ -895,6 +933,18 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("cams_sortMode", sortMode);
         render();
     });
+});
+
+window.addEventListener("scroll", () => {
+
+    if (
+        window.innerHeight + window.scrollY
+        >= document.body.offsetHeight - 300
+    ) {
+        if (renderPointer < filteredActors.length) {
+            renderNextBatch();
+        }
+    }
 });
 
 /* ===============================
