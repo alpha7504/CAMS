@@ -31,21 +31,27 @@ function initializeGoogle() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
-            callback: (resp) => {
+
+            // ⭐ THIS IS THE IMPORTANT PART
+            callback: async (resp) => {
 
                 if (resp.error) {
-                    console.error("OAuth error", resp);
+                    console.error(resp);
                     return;
                 }
 
                 accessToken = resp.access_token;
                 driveReady = true;
+                driveEnabled = true;
 
-                console.log("✅ Google authorized");
+                console.log("Google connected");
+
+                await finishDriveConnection();
             }
         });
 
-        console.log("Google API ready");
+        // attempt silent reconnect automatically
+        requestToken("");
     });
 }
 
@@ -224,6 +230,7 @@ function mergeActors(localActors, cloudActors) {
 async function connectGoogleDrive(currentActors) {
 
     updateSyncStatus("Connecting...");
+    requestToken("consent");
 
     loginGoogle();
 
@@ -259,6 +266,36 @@ async function connectGoogleDrive(currentActors) {
     }
     document.getElementById("googleLoginBtn").style.display = "none";
     document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
+    updateSyncStatus("Synced");
+}
+
+/* ===============================
+   FINALIZE CONNECTION AFTER TOKEN
+================================ */
+
+async function finishDriveConnection() {
+
+    updateSyncStatus("Syncing...");
+
+    const cloudData = await loadFromDrive();
+
+    if (Array.isArray(cloudData) && cloudData.length > 0) {
+
+        const merged = mergeActors(actors, cloudData);
+
+        actors.length = 0;
+        actors.push(...merged);
+
+        localStorage.setItem("actors", JSON.stringify(actors));
+
+        await saveToDrive(actors);
+
+        render();
+    }
+
+    document.getElementById("googleLoginBtn").style.display = "none";
+    document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
+
     updateSyncStatus("Synced");
 }
 
