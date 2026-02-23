@@ -257,26 +257,31 @@ function disconnectGoogle() {
 async function finishDriveConnection() {
     updateSyncStatus("Syncing...");
 
-    // Set UI state
+    // Show correct buttons
     document.getElementById("googleLoginBtn").style.display = "none";
     document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
 
-    // 1. Fetch latest data from Cloud
+    // 1. Fetch data from Google Drive
     const cloudData = await loadFromDrive();
     
-    if (cloudData) {
-        // 2. Merge cloud data with local data, keeping the newest versions
+    if (cloudData && Array.isArray(cloudData)) {
+        // 2. Merge cloud data into our local 'actors' array
+        // This uses the mergeActors function already in your file
         actors = mergeActors(actors, cloudData);
         
-        // 3. Save the merged result back to local storage and refresh UI
+        // 3. Persist the merged list locally
         localStorage.setItem("actors", JSON.stringify(actors));
-        if (typeof render === "function") render();
+        
+        // 4. Update the screen immediately
+        if (typeof render === "function") {
+            render();
+        }
     }
 
     updateSyncStatus("Synced");
     localStorage.setItem("cams_drive_connected", "1");
     
-    // 4. Send the local state to cloud to ensure both are identical
+    // 5. Ensure cloud is updated with the latest merged state
     await saveToDrive(actors);
 }
 

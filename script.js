@@ -594,6 +594,7 @@ async function importActorFromURL() {
 
         const actor = {
             id: Date.now() + Math.random(),
+            updatedAt: Date.now(), // Add this line to ensure the merger works
             english,
             chinese,
             pinyin: getPinyinKey(english),
