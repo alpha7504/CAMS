@@ -15,38 +15,28 @@ let driveEnabled = false;
 -------------------------------- */
 
 /* ================================
-   GOOGLE INIT (RUN ON PAGE LOAD)
+   GOOGLE INIT (UPDATED)
 ================================ */
-
 function initializeGoogle() {
     updateSyncStatus("Offline");
 
     gapi.load("client", async () => {
-
         await gapi.client.init({
-            discoveryDocs: [
-                "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
-            ]
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
         });
 
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
-
-            // ⭐ THIS IS THE IMPORTANT PART
             callback: async (resp) => {
-
                 if (resp.error) {
-                    console.error("OAuth error:", resp);
                     updateSyncStatus("Offline");
                     return;
                 }
 
-                console.log("Token received");
-
                 accessToken = resp.access_token;
                 driveReady = true;
-                driveEnabled = true;
+                driveEnabled = true; // This allows saveActors() to work
 
                 await finishDriveConnection();
             }
@@ -207,25 +197,18 @@ async function connectGoogleDrive() {
 ================================ */
 
 async function finishDriveConnection() {
-
     updateSyncStatus("Syncing...");
-
+    
     const cloudData = await loadFromDrive();
-
     if (Array.isArray(cloudData) && cloudData.length > 0) {
-
         const merged = mergeActors(actors, cloudData);
-
         actors.length = 0;
         actors.push(...merged);
-
         localStorage.setItem("actors", JSON.stringify(actors));
-
-        await saveToDrive(actors);
-
         render();
     }
 
+    // Toggle button visibility
     document.getElementById("googleLoginBtn").style.display = "none";
     document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
 
@@ -258,10 +241,12 @@ window.addEventListener("load", () => {
 
     initializeGoogle();
 
-    const wasConnected =
-        localStorage.getItem("cams_drive_connected");
+    const wasConnected = localStorage.getItem("cams_drive_connected");
 
     if (wasConnected) {
-        setTimeout(() => requestToken(""), 800);
+        // We add a small delay to ensure gapi/google libs are fully ready
+        setTimeout(() => {
+            tokenClient.requestAccessToken({ prompt: "" });
+        }, 1000);
     }
 });
