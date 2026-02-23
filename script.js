@@ -1,8 +1,24 @@
 /* ===============================
    ELEMENT REFERENCES
 ================================ */
-function saveActors() {
+async function saveActors() {
+
+    // existing behavior
     localStorage.setItem("actors", JSON.stringify(actors));
+
+    // NEW: cloud sync only if connected
+    if (typeof driveEnabled !== "undefined" && driveEnabled) {
+
+        updateSyncStatus("Syncing...");
+
+        try {
+            await saveToDrive(actors);
+            updateSyncStatus("Synced");
+        } catch (e) {
+            console.error("Drive save failed", e);
+            updateSyncStatus("Sync failed");
+        }
+    }
 }
 let sortMode =
     localStorage.getItem("cams_sortMode") || "date_desc";
@@ -388,6 +404,7 @@ function saveActor() {
 
     const data = {
         id: Date.now(),
+        updatedAt: Date.now(),
         english: eng.value.trim(),
         chinese: cn.value.trim(),
         pinyin: getPinyinKey(eng.value),
@@ -416,10 +433,20 @@ function saveActor() {
     localStorage.setItem("nameDict", JSON.stringify(nameDict));
 
     if (editIndex !== null) {
+
         data.favorite = actors[editIndex].favorite;
+
+        // ⭐ mark edit time
+        data.updatedAt = Date.now();
+
         actors[editIndex] = data;
         editIndex = null;
+
     } else {
+
+        // ⭐ new actor timestamp
+        data.updatedAt = Date.now();
+
         actors.push(data);
     }
 
@@ -874,10 +901,10 @@ window.addEventListener("load", () => {
     }, 800);
 });
 
-function updateRecordInfo(){
+function updateRecordInfo() {
 
     const el = document.getElementById("recordInfo");
-    if(!el) return;
+    if (!el) return;
 
     el.textContent =
         `Actors: ${actors.length} | Showing: ${Math.min(renderPointer, filteredActors.length)}`;
@@ -970,3 +997,20 @@ camsChannel.onmessage = (event) => {
 
 
 render();
+/* ===============================
+   GOOGLE DRIVE LOGIN BUTTON
+================================ */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const btn = document.getElementById("googleLoginBtn");
+
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+
+        await connectGoogleDrive(actors);
+
+    });
+
+});
