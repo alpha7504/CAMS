@@ -29,9 +29,12 @@ function initializeGoogle() {
             client_id: CLIENT_ID,
             scope: SCOPES,
             callback: async (resp) => {
-                if (resp.error) {
-                    // If silent attempt fails, show the login button
+                // Check if the response actually contains a token
+                if (!resp || resp.error || !resp.access_token) {
+                    console.warn("Silent login failed or interaction required");
+                    updateSyncStatus("Offline");
                     document.getElementById("googleLoginBtn").style.display = "inline-block";
+                    document.getElementById("disconnectGoogleBtn").style.display = "none";
                     return;
                 }
 
@@ -39,16 +42,15 @@ function initializeGoogle() {
                 driveReady = true;
                 driveEnabled = true;
 
-                // ⭐ NEW: Request user info once to get the email for future hints
-                if (!localStorage.getItem("cams_user_hint")) {
-                    fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                        headers: { Authorization: `Bearer ${accessToken}` }
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.email) localStorage.setItem("cams_user_hint", data.email);
-                        });
-                }
+                // Save the email hint for the next refresh
+                fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.email) localStorage.setItem("cams_user_hint", data.email);
+                    });
+
 
                 await finishDriveConnection();
             }
@@ -212,23 +214,19 @@ async function connectGoogleDrive() {
 
 function disconnectGoogle() {
     if (accessToken) {
-        google.accounts.oauth2.revoke(accessToken, () => {
-            console.log("Access revoked");
-        });
+        google.accounts.oauth2.revoke(accessToken, () => {});
     }
 
     accessToken = null;
-    driveReady = false;
     driveEnabled = false;
-
     updateSyncStatus("Offline");
+
+    // Clear everything so the next refresh is clean
+    localStorage.removeItem("cams_drive_connected");
+    localStorage.removeItem("cams_user_hint");
 
     document.getElementById("disconnectGoogleBtn").style.display = "none";
     document.getElementById("googleLoginBtn").style.display = "inline-block";
-
-    // This prevents the app from trying to silent login next time
-    localStorage.removeItem("cams_drive_connected");
-    localStorage.removeItem("cams_user_hint"); // Clear the hint
 }
 
 /* ===============================
@@ -251,16 +249,17 @@ async function finishDriveConnection() {
 
 window.addEventListener("load", () => {
     initializeGoogle();
+
     const wasConnected = localStorage.getItem("cams_drive_connected");
     const userHint = localStorage.getItem("cams_user_hint");
 
     if (wasConnected) {
+        updateSyncStatus("Connecting..."); // Let the user know we are trying
         setTimeout(() => {
             if (tokenClient) {
-                // ⭐ PROMPT NONE + HINT = SILENT LOGIN
-                tokenClient.requestAccessToken({ 
-                    prompt: "none", 
-                    login_hint: userHint 
+                tokenClient.requestAccessToken({
+                    prompt: "none",
+                    login_hint: userHint || undefined
                 });
             }
         }, 1500);
