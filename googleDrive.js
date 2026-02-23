@@ -28,7 +28,7 @@ function initializeGoogle() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
-            ccallback: async (resp) => {
+            callback: async (resp) => {
                 if (resp.error) {
                     // If silent attempt fails, show the login button
                     document.getElementById("googleLoginBtn").style.display = "inline-block";
