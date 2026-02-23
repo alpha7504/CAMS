@@ -1,7 +1,7 @@
 /* ================================
    CAMS Google Drive Storage
 ================================ */
-let googleInitialized = false;
+
 const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
@@ -37,20 +37,18 @@ function initializeGoogle() {
             callback: async (resp) => {
 
                 if (resp.error) {
-                    console.error(resp);
+                    console.error("OAuth error:", resp);
+                    updateSyncStatus("Offline");
                     return;
                 }
+
+                console.log("Token received");
 
                 accessToken = resp.access_token;
                 driveReady = true;
                 driveEnabled = true;
 
-                console.log("Google connected");
-
-                if (!connectionInitialized) {
-                    googleInitialized = true;
-                    await finishDriveConnection();
-                }
+                await finishDriveConnection();
             }
         });
     });
@@ -260,16 +258,10 @@ window.addEventListener("load", () => {
 
     initializeGoogle();
 
-    // attempt silent reconnect ONLY if user connected before
     const wasConnected =
         localStorage.getItem("cams_drive_connected");
 
     if (wasConnected) {
-
-        console.log("Restoring previous Drive session...");
-
-        setTimeout(() => {
-            requestToken(""); // silent login
-        }, 800);
+        setTimeout(() => requestToken(""), 800);
     }
 });
