@@ -59,22 +59,26 @@
         </button>
     </div>
 
+    <div class="panel flex-container">
+        <div class="controls-left">
+            <input id="search" placeholder="Search...">
+            <select id="sortMode">
+                <option value="date_desc">Newest First</option>
+                <option value="date_asc">Oldest First</option>
+                <option value="name_asc">Name A → Z</option>
+                <option value="name_desc">Name Z → A</option>
+                <option value="favorite">Favorites First</option>
+            </select>
+            <span id="recordInfo"></span>
+        </div>
 
-    <div class="panel">
-        <input id="search" placeholder="Search...">
-        <select id="sortMode">
-            <option value="date_desc">Newest First</option>
-            <option value="date_asc">Oldest First</option>
-            <option value="name_asc">Name A → Z</option>
-            <option value="name_desc">Name Z → A</option>
-            <option value="favorite">Favorites First</option>
-        </select>
-        <div id="recordInfo"></div>
-        <button id="googleLoginBtn">☁️ Login with Google</button>
-        <span id="syncStatus">Offline</span>
-        <button id="disconnectGoogleBtn" style="display:none" onclick="disconnectGoogle()">
-            Disconnect
-        </button>
+        <div class="controls-right">
+            <span id="syncStatus">Offline</span>
+            <button id="googleLoginBtn">☁️ Login</button>
+            <button id="disconnectGoogleBtn" style="display:none" onclick="disconnectGoogle()">
+                Disconnect
+            </button>
+        </div>
     </div>
 
     <div id="grid" class="grid"></div>

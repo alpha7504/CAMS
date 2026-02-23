@@ -173,9 +173,21 @@ async function saveToDrive(data) {
    CONNECT BUTTON FLOW
 -------------------------------- */
 
-function updateSyncStatus(text) {
+function updateSyncStatus(msg) {
     const el = document.getElementById("syncStatus");
-    if (el) el.textContent = text;
+    if (!el) return;
+
+    el.innerText = msg;
+
+    // Change color based on status
+    if (msg === "Synced") {
+        el.style.color = "green";
+        el.innerText = "☁️ Synced";
+    } else if (msg === "Syncing...") {
+        el.style.color = "orange";
+    } else if (msg === "Offline") {
+        el.style.color = "#888";
+    }
 }
 
 function mergeActors(localActors, cloudActors) {
