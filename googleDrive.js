@@ -1,7 +1,7 @@
 /* ================================
    CAMS Google Drive Storage
 ================================ */
-
+let googleInitialized = false;
 const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
@@ -51,11 +51,22 @@ function initializeGoogle() {
             }
         });
 
-        // attempt silent reconnect automatically
-        setTimeout(() => {
-            requestToken("");
-        }, 300);
+        googleInitialized = true;
 
+        // ⭐ TRY SILENT LOGIN HERE
+        attemptSilentReconnect();
+
+    });
+}
+
+function attemptSilentReconnect() {
+
+    if (!googleInitialized || !tokenClient) return;
+
+    console.log("Attempting silent reconnect...");
+
+    tokenClient.requestAccessToken({
+        prompt: ""   // silent
     });
 }
 
