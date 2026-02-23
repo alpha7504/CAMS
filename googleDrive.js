@@ -3,7 +3,8 @@
 ================================ */
 
 const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
+// Added email scope for the login_hint
+const SCOPES = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email";
 
 let tokenClient = null;
 let accessToken = null;
@@ -18,8 +19,6 @@ let driveEnabled = false;
    GOOGLE INIT (UPDATED)
 ================================ */
 function initializeGoogle() {
-    updateSyncStatus("Offline");
-
     gapi.load("client", async () => {
         await gapi.client.init({
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
@@ -29,12 +28,11 @@ function initializeGoogle() {
             client_id: CLIENT_ID,
             scope: SCOPES,
             callback: async (resp) => {
-                // Check if the response actually contains a token
-                if (!resp || resp.error || !resp.access_token) {
-                    console.warn("Silent login failed or interaction required");
+                // If silent refresh fails, we stop the "Connecting" hang
+                if (resp.error !== undefined) {
+                    console.warn("Silent login failed", resp.error);
                     updateSyncStatus("Offline");
                     document.getElementById("googleLoginBtn").style.display = "inline-block";
-                    document.getElementById("disconnectGoogleBtn").style.display = "none";
                     return;
                 }
 
@@ -42,19 +40,31 @@ function initializeGoogle() {
                 driveReady = true;
                 driveEnabled = true;
 
-                // Save the email hint for the next refresh
+                // Save email to localStorage for future silent hints
                 fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.email) localStorage.setItem("cams_user_hint", data.email);
-                    });
-
+                .then(res => res.json())
+                .then(data => {
+                    if (data.email) localStorage.setItem("cams_user_hint", data.email);
+                })
+                .catch(() => console.log("Hint fetch failed"));
 
                 await finishDriveConnection();
             }
         });
+
+        // Trigger silent refresh if we were previously connected
+        const wasConnected = localStorage.getItem("cams_drive_connected");
+        const userHint = localStorage.getItem("cams_user_hint");
+
+        if (wasConnected) {
+            updateSyncStatus("Connecting...");
+            tokenClient.requestAccessToken({ 
+                prompt: "none", 
+                login_hint: userHint || undefined 
+            });
+        }
     });
 }
 
@@ -214,7 +224,7 @@ async function connectGoogleDrive() {
 
 function disconnectGoogle() {
     if (accessToken) {
-        google.accounts.oauth2.revoke(accessToken, () => {});
+        google.accounts.oauth2.revoke(accessToken, () => { });
     }
 
     accessToken = null;
