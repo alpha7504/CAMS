@@ -30,13 +30,17 @@ function initializeGoogle() {
             scope: SCOPES,
             callback: async (resp) => {
                 if (resp.error) {
+                    // If silent refresh fails (token expired), show the login button again
+                    console.log("Silent refresh failed or requires manual login");
                     updateSyncStatus("Offline");
+                    document.getElementById("googleLoginBtn").style.display = "inline-block";
+                    document.getElementById("disconnectGoogleBtn").style.display = "none";
                     return;
                 }
 
                 accessToken = resp.access_token;
                 driveReady = true;
-                driveEnabled = true; // This allows saveActors() to work
+                driveEnabled = true;
 
                 await finishDriveConnection();
             }
@@ -198,7 +202,7 @@ async function connectGoogleDrive() {
 
 async function finishDriveConnection() {
     updateSyncStatus("Syncing...");
-    
+
     const cloudData = await loadFromDrive();
     if (Array.isArray(cloudData) && cloudData.length > 0) {
         const merged = mergeActors(actors, cloudData);
@@ -238,15 +242,17 @@ function disconnectGoogle() {
 }
 
 window.addEventListener("load", () => {
-
     initializeGoogle();
 
     const wasConnected = localStorage.getItem("cams_drive_connected");
 
     if (wasConnected) {
-        // We add a small delay to ensure gapi/google libs are fully ready
+        // We use a small delay to ensure the Google GIS library is initialized
         setTimeout(() => {
-            tokenClient.requestAccessToken({ prompt: "" });
+            if (tokenClient) {
+                // Requesting with NO prompt will attempt a silent background refresh
+                tokenClient.requestAccessToken({ prompt: "none" });
+            }
         }, 1000);
     }
 });
