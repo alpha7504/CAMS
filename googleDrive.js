@@ -312,6 +312,7 @@ async function finishDriveConnection() {
     document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
 
     updateSyncStatus("Synced");
+    localStorage.setItem("cams_drive_connected", "1");
 }
 
 function disconnectGoogle() {
@@ -330,9 +331,26 @@ function disconnectGoogle() {
     document.getElementById("googleLoginBtn").style.display = "inline-block";
 
     console.log("Disconnected from Google");
+    localStorage.removeItem("cams_drive_connected");
 }
 
-window.addEventListener("load", initializeGoogle);
+window.addEventListener("load", () => {
+
+    initializeGoogle();
+
+    // attempt silent reconnect ONLY if user connected before
+    const wasConnected =
+        localStorage.getItem("cams_drive_connected");
+
+    if (wasConnected) {
+
+        console.log("Restoring previous Drive session...");
+
+        setTimeout(() => {
+            requestToken(""); // silent login
+        }, 800);
+    }
+});
 
 window.addEventListener("load", async () => {
 
