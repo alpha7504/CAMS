@@ -53,16 +53,51 @@ function initializeGoogle() {
    Login
 -------------------------------- */
 
-function loginGoogle() {
+function requestToken(promptType = "") {
 
     if (!tokenClient) {
-        console.error("Token client not ready yet");
+        console.error("Token client not ready");
         return;
     }
 
     tokenClient.requestAccessToken({
-        prompt: "consent"
+        prompt: promptType   // "" = silent, "consent" = popup
     });
+}
+
+async function silentReconnect() {
+
+    if (!tokenClient) return;
+
+    console.log("Attempting silent reconnect...");
+
+    requestToken(""); // no popup
+
+    // wait briefly for token
+    for (let i = 0; i < 10; i++) {
+        if (driveReady) break;
+        await new Promise(r => setTimeout(r, 200));
+    }
+
+    if (driveReady) {
+        driveEnabled = true;
+        updateSyncStatus("Synced");
+
+        const cloudData = await loadFromDrive();
+
+        if (Array.isArray(cloudData)) {
+
+            const merged = mergeActors(actors, cloudData);
+
+            actors.length = 0;
+            actors.push(...merged);
+
+            localStorage.setItem("actors", JSON.stringify(actors));
+            render();
+        }
+
+        console.log("Silent reconnect success");
+    }
 }
 
 /* --------------------------------
@@ -222,7 +257,37 @@ async function connectGoogleDrive(currentActors) {
         // ✅ first login → upload local data
         await saveToDrive(currentActors);
     }
-
+    document.getElementById("googleLoginBtn").style.display = "none";
+    document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
     updateSyncStatus("Synced");
 }
+
+function disconnectGoogle() {
+
+    if (accessToken) {
+        google.accounts.oauth2.revoke(accessToken);
+    }
+
+    accessToken = null;
+    driveReady = false;
+    driveEnabled = false;
+
+    updateSyncStatus("Offline");
+
+    document.getElementById("disconnectGoogleBtn").style.display = "none";
+    document.getElementById("googleLoginBtn").style.display = "inline-block";
+
+    console.log("Disconnected from Google");
+}
+
 window.addEventListener("load", initializeGoogle);
+
+window.addEventListener("load", async () => {
+
+    initializeGoogle();
+
+    // wait for Google API ready
+    await new Promise(r => setTimeout(r, 1200));
+
+    silentReconnect();
+});
