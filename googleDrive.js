@@ -19,6 +19,7 @@ let driveEnabled = false;
 ================================ */
 
 function initializeGoogle() {
+    updateSyncStatus("Offline");
 
     gapi.load("client", async () => {
 
@@ -51,7 +52,10 @@ function initializeGoogle() {
         });
 
         // attempt silent reconnect automatically
-        requestToken("");
+        setTimeout(() => {
+            requestToken("");
+        }, 300);
+
     });
 }
 
