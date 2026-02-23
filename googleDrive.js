@@ -53,22 +53,12 @@ function initializeGoogle() {
 
         googleInitialized = true;
 
-        // ⭐ TRY SILENT LOGIN HERE
-        attemptSilentReconnect();
+
 
     });
 }
 
-function attemptSilentReconnect() {
 
-    if (!googleInitialized || !tokenClient) return;
-
-    console.log("Attempting silent reconnect...");
-
-    tokenClient.requestAccessToken({
-        prompt: ""   // silent
-    });
-}
 
 /* --------------------------------
    Login
@@ -86,40 +76,7 @@ function requestToken(promptType = "") {
     });
 }
 
-async function silentReconnect() {
 
-    if (!tokenClient) return;
-
-    console.log("Attempting silent reconnect...");
-
-    requestToken(""); // no popup
-
-    // wait briefly for token
-    for (let i = 0; i < 10; i++) {
-        if (driveReady) break;
-        await new Promise(r => setTimeout(r, 200));
-    }
-
-    if (driveReady) {
-        driveEnabled = true;
-        updateSyncStatus("Synced");
-
-        const cloudData = await loadFromDrive();
-
-        if (Array.isArray(cloudData)) {
-
-            const merged = mergeActors(actors, cloudData);
-
-            actors.length = 0;
-            actors.push(...merged);
-
-            localStorage.setItem("actors", JSON.stringify(actors));
-            render();
-        }
-
-        console.log("Silent reconnect success");
-    }
-}
 
 /* --------------------------------
    Find data.json
@@ -242,46 +199,11 @@ function mergeActors(localActors, cloudActors) {
     return Array.from(map.values());
 }
 
-async function connectGoogleDrive(currentActors) {
+async function connectGoogleDrive() {
 
     updateSyncStatus("Connecting...");
-    requestToken("consent");
 
-    loginGoogle();
-
-    // wait until token arrives
-    while (!driveReady) {
-        await new Promise(r => setTimeout(r, 200));
-    }
-
-    driveEnabled = true;
-
-    const cloudData = await loadFromDrive();
-
-    // ✅ If valid cloud data exists → MERGE
-    if (Array.isArray(cloudData) && cloudData.length > 0) {
-
-        const merged = mergeActors(actors, cloudData);
-
-        // replace contents safely (keep same array reference)
-        actors.length = 0;
-        actors.push(...merged);
-
-        // update local cache
-        localStorage.setItem("actors", JSON.stringify(actors));
-
-        // push healed dataset back to cloud
-        await saveToDrive(actors);
-
-        render();
-    }
-    else {
-        // ✅ first login → upload local data
-        await saveToDrive(currentActors);
-    }
-    document.getElementById("googleLoginBtn").style.display = "none";
-    document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
-    updateSyncStatus("Synced");
+    requestToken("consent"); // popup login
 }
 
 /* ===============================
@@ -350,14 +272,4 @@ window.addEventListener("load", () => {
             requestToken(""); // silent login
         }, 800);
     }
-});
-
-window.addEventListener("load", async () => {
-
-    initializeGoogle();
-
-    // wait for Google API ready
-    await new Promise(r => setTimeout(r, 1200));
-
-    silentReconnect();
 });
