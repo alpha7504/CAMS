@@ -29,12 +29,14 @@ function initializeGoogle() {
             client_id: CLIENT_ID,
             scope: SCOPES,
             callback: async (resp) => {
-                if (resp.error) {
-                    // If silent refresh fails (token expired), show the login button again
-                    console.log("Silent refresh failed or requires manual login");
-                    updateSyncStatus("Offline");
+                // If Google says "interaction_required" or "no access token"
+                if (resp.error !== undefined) {
+                    console.log("Background sync paused, manual login required");
+
+                    // Show the login button so the user can re-authenticate
                     document.getElementById("googleLoginBtn").style.display = "inline-block";
                     document.getElementById("disconnectGoogleBtn").style.display = "none";
+                    updateSyncStatus("Offline");
                     return;
                 }
 
@@ -196,32 +198,13 @@ async function connectGoogleDrive() {
     requestToken("consent"); // popup login
 }
 
-/* ===============================
-   FINALIZE CONNECTION AFTER TOKEN
+
+
+/* ================================
+   GOOGLE DRIVE PERSISTENCE
 ================================ */
 
-async function finishDriveConnection() {
-    updateSyncStatus("Syncing...");
-
-    const cloudData = await loadFromDrive();
-    if (Array.isArray(cloudData) && cloudData.length > 0) {
-        const merged = mergeActors(actors, cloudData);
-        actors.length = 0;
-        actors.push(...merged);
-        localStorage.setItem("actors", JSON.stringify(actors));
-        render();
-    }
-
-    // Toggle button visibility
-    document.getElementById("googleLoginBtn").style.display = "none";
-    document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
-
-    updateSyncStatus("Synced");
-    localStorage.setItem("cams_drive_connected", "1");
-}
-
 function disconnectGoogle() {
-
     if (accessToken) {
         google.accounts.oauth2.revoke(accessToken, () => {
             console.log("Access revoked");
@@ -237,8 +220,26 @@ function disconnectGoogle() {
     document.getElementById("disconnectGoogleBtn").style.display = "none";
     document.getElementById("googleLoginBtn").style.display = "inline-block";
 
-    console.log("Disconnected from Google");
+    // This prevents the app from trying to silent login next time
     localStorage.removeItem("cams_drive_connected");
+}
+
+/* ===============================
+   FINALIZE CONNECTION AFTER TOKEN
+================================ */
+
+async function finishDriveConnection() {
+    updateSyncStatus("Syncing...");
+
+    // Set UI state
+    document.getElementById("googleLoginBtn").style.display = "none";
+    document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
+
+    const cloudData = await loadFromDrive();
+    // ... rest of your merge logic
+
+    updateSyncStatus("Synced");
+    localStorage.setItem("cams_drive_connected", "1");
 }
 
 window.addEventListener("load", () => {
@@ -247,12 +248,13 @@ window.addEventListener("load", () => {
     const wasConnected = localStorage.getItem("cams_drive_connected");
 
     if (wasConnected) {
-        // We use a small delay to ensure the Google GIS library is initialized
+        // Delay slightly to let the libraries finish loading
         setTimeout(() => {
             if (tokenClient) {
-                // Requesting with NO prompt will attempt a silent background refresh
+                // Try to get token without a popup
+                // If this fails, the callback will show the login button
                 tokenClient.requestAccessToken({ prompt: "none" });
             }
-        }, 1000);
+        }, 1500);
     }
 });
