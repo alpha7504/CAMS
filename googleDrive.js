@@ -14,33 +14,38 @@ let driveEnabled = false;
    Initialize Google API
 -------------------------------- */
 
-async function initGoogleDrive() {
-    return new Promise((resolve) => {
+/* ================================
+   GOOGLE INIT (RUN ON PAGE LOAD)
+================================ */
 
-        gapi.load("client", async () => {
+function initializeGoogle() {
 
-            await gapi.client.init({
-                discoveryDocs: [
-                    "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
-                ]
-            });
+    gapi.load("client", async () => {
 
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: (resp) => {
-
-                    if (resp.error) {
-                        console.error("Google Auth Error", resp);
-                        return;
-                    }
-
-                    accessToken = resp.access_token;
-                    driveReady = true;
-                    resolve();
-                }
-            });
+        await gapi.client.init({
+            discoveryDocs: [
+                "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
+            ]
         });
+
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: (resp) => {
+
+                if (resp.error) {
+                    console.error("OAuth error", resp);
+                    return;
+                }
+
+                accessToken = resp.access_token;
+                driveReady = true;
+
+                console.log("✅ Google authorized");
+            }
+        });
+
+        console.log("Google API ready");
     });
 }
 
@@ -49,21 +54,14 @@ async function initGoogleDrive() {
 -------------------------------- */
 
 function loginGoogle() {
-    return new Promise((resolve) => {
 
-        tokenClient.callback = (resp) => {
+    if (!tokenClient) {
+        console.error("Token client not ready yet");
+        return;
+    }
 
-            if (resp.error) {
-                console.error("Login failed", resp);
-                return;
-            }
-
-            accessToken = resp.access_token;
-            driveReady = true;
-            resolve();
-        };
-
-        tokenClient.requestAccessToken();
+    tokenClient.requestAccessToken({
+        prompt: "consent"
     });
 }
 
@@ -192,8 +190,12 @@ async function connectGoogleDrive(currentActors) {
 
     updateSyncStatus("Connecting...");
 
-    await initGoogleDrive();
-    await loginGoogle();
+    loginGoogle();
+
+    // wait until token arrives
+    while (!driveReady) {
+        await new Promise(r => setTimeout(r, 200));
+    }
 
     driveEnabled = true;
 
@@ -223,3 +225,4 @@ async function connectGoogleDrive(currentActors) {
 
     updateSyncStatus("Synced");
 }
+window.addEventListener("load", initializeGoogle);
