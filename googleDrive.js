@@ -47,14 +47,12 @@ function initializeGoogle() {
 
                 console.log("Google connected");
 
-                await finishDriveConnection();
+                if (!connectionInitialized) {
+                    googleInitialized = true;
+                    await finishDriveConnection();
+                }
             }
         });
-
-        googleInitialized = true;
-
-
-
     });
 }
 
@@ -240,7 +238,9 @@ async function finishDriveConnection() {
 function disconnectGoogle() {
 
     if (accessToken) {
-        google.accounts.oauth2.revoke(accessToken);
+        google.accounts.oauth2.revoke(accessToken, () => {
+            console.log("Access revoked");
+        });
     }
 
     accessToken = null;
