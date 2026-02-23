@@ -254,7 +254,6 @@ function disconnectGoogle() {
 /* ===============================
    FINALIZE CONNECTION AFTER TOKEN
 ================================ */
-
 async function finishDriveConnection() {
     updateSyncStatus("Syncing...");
 
@@ -262,11 +261,23 @@ async function finishDriveConnection() {
     document.getElementById("googleLoginBtn").style.display = "none";
     document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
 
+    // 1. Fetch latest data from Cloud
     const cloudData = await loadFromDrive();
-    // ... rest of your merge logic
+    
+    if (cloudData) {
+        // 2. Merge cloud data with local data, keeping the newest versions
+        actors = mergeActors(actors, cloudData);
+        
+        // 3. Save the merged result back to local storage and refresh UI
+        localStorage.setItem("actors", JSON.stringify(actors));
+        if (typeof render === "function") render();
+    }
 
     updateSyncStatus("Synced");
     localStorage.setItem("cams_drive_connected", "1");
+    
+    // 4. Send the local state to cloud to ensure both are identical
+    await saveToDrive(actors);
 }
 
 window.addEventListener("load", () => {
