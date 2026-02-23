@@ -28,21 +28,27 @@ function initializeGoogle() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
-            callback: async (resp) => {
-                // If Google says "interaction_required" or "no access token"
-                if (resp.error !== undefined) {
-                    console.log("Background sync paused, manual login required");
-
-                    // Show the login button so the user can re-authenticate
+            ccallback: async (resp) => {
+                if (resp.error) {
+                    // If silent attempt fails, show the login button
                     document.getElementById("googleLoginBtn").style.display = "inline-block";
-                    document.getElementById("disconnectGoogleBtn").style.display = "none";
-                    updateSyncStatus("Offline");
                     return;
                 }
 
                 accessToken = resp.access_token;
                 driveReady = true;
                 driveEnabled = true;
+
+                // ⭐ NEW: Request user info once to get the email for future hints
+                if (!localStorage.getItem("cams_user_hint")) {
+                    fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.email) localStorage.setItem("cams_user_hint", data.email);
+                        });
+                }
 
                 await finishDriveConnection();
             }
@@ -222,6 +228,7 @@ function disconnectGoogle() {
 
     // This prevents the app from trying to silent login next time
     localStorage.removeItem("cams_drive_connected");
+    localStorage.removeItem("cams_user_hint"); // Clear the hint
 }
 
 /* ===============================
@@ -244,16 +251,17 @@ async function finishDriveConnection() {
 
 window.addEventListener("load", () => {
     initializeGoogle();
-
     const wasConnected = localStorage.getItem("cams_drive_connected");
+    const userHint = localStorage.getItem("cams_user_hint");
 
     if (wasConnected) {
-        // Delay slightly to let the libraries finish loading
         setTimeout(() => {
             if (tokenClient) {
-                // Try to get token without a popup
-                // If this fails, the callback will show the login button
-                tokenClient.requestAccessToken({ prompt: "none" });
+                // ⭐ PROMPT NONE + HINT = SILENT LOGIN
+                tokenClient.requestAccessToken({ 
+                    prompt: "none", 
+                    login_hint: userHint 
+                });
             }
         }, 1500);
     }
