@@ -58,6 +58,7 @@ function initializeGoogle() {
                 console.log("✅ Google session restored");
 
                 accessToken = resp.access_token;
+                gapi.client.setToken({ access_token: accessToken });
                 driveEnabled = true;
 
                 await finishDriveConnection();
