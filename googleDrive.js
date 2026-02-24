@@ -217,18 +217,39 @@ async function saveToDrive(data) {
             JSON.stringify(data) + "\r\n" +
             `--${boundary}--`;
 
-        const res = await fetch(url, {
-            method: file ? "PATCH" : "POST",
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": `multipart/related; boundary=${boundary}`
-            },
-            body
-        });
+        const fileContent = JSON.stringify(data);
 
-        if (!res.ok) {
-            console.error("Drive save failed:", res.status);
-            return;
+        if (file) {
+
+            // UPDATE existing file
+            await gapi.client.request({
+                path: `/upload/drive/v3/files/${file.id}`,
+                method: "PATCH",
+                params: {
+                    uploadType: "media"
+                },
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: fileContent
+            });
+
+        } else {
+
+            // CREATE new file
+            const create = await gapi.client.drive.files.create({
+                resource: {
+                    name: "data.json",
+                    parents: ["appDataFolder"]
+                },
+                media: {
+                    mimeType: "application/json",
+                    body: fileContent
+                },
+                fields: "id"
+            });
+
+            console.log("Created file:", create.result.id);
         }
 
         console.log("Saved to Drive");
