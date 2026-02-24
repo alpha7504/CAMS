@@ -16,8 +16,9 @@ let driveEnabled = false;
 -------------------------------- */
 
 /* ================================
-   GOOGLE INIT (UPDATED)
+   GDRIVE PERSISTENT SYNC LOGIC
 ================================ */
+
 function initializeGoogle() {
     gapi.load("client", async () => {
         await gapi.client.init({
@@ -28,11 +29,8 @@ function initializeGoogle() {
             client_id: CLIENT_ID,
             scope: SCOPES,
             callback: async (resp) => {
-                // If silent refresh fails, we stop the "Connecting" hang
-                if (resp.error !== undefined) {
-                    console.warn("Silent login failed", resp.error);
+                if (resp.error) {
                     updateSyncStatus("Offline");
-                    document.getElementById("googleLoginBtn").style.display = "inline-block";
                     return;
                 }
 
@@ -40,34 +38,94 @@ function initializeGoogle() {
                 driveReady = true;
                 driveEnabled = true;
 
-                // Save email to localStorage for future silent hints
-                fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                    headers: { Authorization: `Bearer ${accessToken}` }
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.email) localStorage.setItem("cams_user_hint", data.email);
-                    })
-                    .catch(() => console.log("Hint fetch failed"));
+                // Capture email for silent login hint
+                try {
+                    const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    const userData = await userRes.json();
+                    if (userData.email) localStorage.setItem("cams_user_hint", userData.email);
+                } catch (e) {
+                    console.log("Hint capture failed");
+                }
 
                 await finishDriveConnection();
             }
         });
 
-        // Trigger silent refresh if we were previously connected
         const wasConnected = localStorage.getItem("cams_drive_connected");
         const userHint = localStorage.getItem("cams_user_hint");
 
+        // Silent login check on page load
         if (wasConnected) {
             updateSyncStatus("Connecting...");
-            tokenClient.requestAccessToken({
-                prompt: "none",
-                login_hint: userHint || undefined
-            });
+            setTimeout(() => {
+                if (tokenClient) {
+                    tokenClient.requestAccessToken({
+                        prompt: "none",
+                        login_hint: userHint || undefined
+                    });
+                }
+            }, 1000);
         }
     });
 }
 
+async function saveToDrive(data) {
+    if (!driveReady || !accessToken) return;
+
+    try {
+        const fileId = await findDataFile();
+        const metadata = { name: "actors_data.json", mimeType: "application/json" };
+        const content = JSON.stringify(data);
+        const blob = new Blob([content], { type: "application/json" });
+
+        let url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+        let method = "POST";
+
+        // If file exists, we try to update it
+        if (fileId) {
+            url = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`;
+            method = "PATCH";
+        }
+
+        const form = new FormData();
+        form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+        form.append("file", blob);
+
+        const response = await fetch(url, {
+            method,
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: form
+        });
+
+        // Handle 403 or 404 by creating a new file instead
+        if (!response.ok) {
+            if (response.status === 403 || response.status === 404) {
+                console.warn("Retrying with new file creation");
+                return saveToDriveNew(data);
+            }
+            throw new Error("Upload failed");
+        }
+        
+        console.log("Saved to Drive");
+    } catch (err) {
+        console.error("Save error", err);
+    }
+}
+
+async function saveToDriveNew(data) {
+    const metadata = { name: "actors_data.json", parents: ["appDataFolder"] };
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("file", new Blob([JSON.stringify(data)], { type: "application/json" }));
+
+    await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: form
+    });
+}
 
 
 /* --------------------------------
