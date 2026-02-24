@@ -2,7 +2,7 @@
    CAMS Google Drive Sync (Clean Architecture)
 ====================================================== */
 
-const CLIENT_ID = "YOUR_CLIENT_ID_HERE";
+const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
 let tokenClient = null;
