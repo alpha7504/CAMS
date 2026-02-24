@@ -1,12 +1,8 @@
-* {
-    box-sizing: border-box;
-}
 body {
     font-family: Arial;
     background: #f4f4f4;
-    margin: 0 auto;
     max-width: 1200px;
-    padding: 10px;
+    margin: auto;
 }
 
 h2 {
@@ -125,8 +121,6 @@ button {
     body {
         padding: 10px;
         font-size: 14px;
-        max-width: 100%;
-        margin: 0;
     }
 
     .panel {
@@ -135,16 +129,57 @@ button {
 
     input,
     textarea,
-    button,
-    select {
+    button {
         width: 100%;
         margin-top: 6px;
         box-sizing: border-box;
     }
 
-.grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-}
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        /* ===============================
+   MOBILE RESPONSIVE
+================================ */
+
+        @media (max-width: 768px) {
+
+            body {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .panel {
+                padding: 10px;
+            }
+
+            input,
+            textarea,
+            button {
+                width: 100%;
+                margin-top: 6px;
+                box-sizing: border-box;
+            }
+
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+
+            .card img {
+                height: auto;
+                max-height: 220px;
+                object-fit: cover;
+            }
+
+            h2 {
+                font-size: 18px;
+                text-align: center;
+            }
+        }
+    }
 
     .card img {
         height: auto;
@@ -155,24 +190,6 @@ button {
     h2 {
         font-size: 18px;
         text-align: center;
-    }
-
-    /* search + sync bar stack */
-    .flex-container {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .controls-left,
-    .controls-right {
-        width: 100%;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-
-    #search {
-        min-width: unset;
-        width: 100%;
     }
 }
 /* Layout for the Search and Sync bar */
@@ -198,4 +215,17 @@ button {
 #syncStatus {
     font-size: 14px;
     font-weight: bold;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .flex-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .controls-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
