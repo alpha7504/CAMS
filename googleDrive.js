@@ -69,16 +69,33 @@ function initializeGoogle() {
                 accessToken = resp.access_token;
                 gapi.client.setToken({ access_token: accessToken });
                 driveEnabled = true;
+                localStorage.setItem("driveConnected", "true");
 
                 await finishDriveConnection();
             }
         });
+        trySilentRestore();
 
         /* ⭐ Silent login attempt EVERY page load */
-        tokenClient.requestAccessToken({ prompt: "" });
+        //tokenClient.requestAccessToken({ prompt: "" });
     });
 }
 
+async function trySilentRestore() {
+
+    if (localStorage.getItem("driveConnected") !== "true")
+        return;
+
+    console.log("Attempting silent restore...");
+
+    try {
+        tokenClient.requestAccessToken({
+            prompt: ""   // silent only
+        });
+    } catch (e) {
+        console.log("Silent restore failed");
+    }
+}
 /* ======================================================
    USER LOGIN (POPUP)
 ====================================================== */
@@ -102,6 +119,7 @@ function disconnectGoogle() {
 
     accessToken = null;
     driveEnabled = false;
+    localStorage.removeItem("driveConnected");
 
     showLoggedOut();
     updateSyncStatus("Offline");
@@ -298,28 +316,28 @@ async function finishDriveConnection() {
     }
 
     updateSyncStatus("Synced");
-   /*if (!window.driveWatcher) {
-
-        window.driveWatcher = setInterval(async () => {
-
-            if (!driveEnabled) return;
-
-            const cloudData = await loadFromDrive();
-            if (!Array.isArray(cloudData)) return;
-
-            const merged =
-                window.mergeActors(actors, cloudData);
-
-            actors.length = 0;
-            actors.push(...merged);
-
-            localStorage.setItem("actors", JSON.stringify(actors));
-            render();
-
-            console.log("Background sync complete");
-
-        }, 30000); // every 30 seconds
-    }*/
+    /*if (!window.driveWatcher) {
+ 
+         window.driveWatcher = setInterval(async () => {
+ 
+             if (!driveEnabled) return;
+ 
+             const cloudData = await loadFromDrive();
+             if (!Array.isArray(cloudData)) return;
+ 
+             const merged =
+                 window.mergeActors(actors, cloudData);
+ 
+             actors.length = 0;
+             actors.push(...merged);
+ 
+             localStorage.setItem("actors", JSON.stringify(actors));
+             render();
+ 
+             console.log("Background sync complete");
+ 
+         }, 30000); // every 30 seconds
+     }*/
 }
 
 /* ======================================================
