@@ -1,10 +1,12 @@
 /* ======================================================
    CAMS Google Drive Sync (Clean Architecture)
 ====================================================== */
-
+if (!window.lastDriveSaveTime) {
+    window.lastDriveSaveTime = 0;
+}
 let driveSaveInProgress = false;
 let pendingDriveSave = false;
-let lastDriveSaveTime = 0;
+
 const DRIVE_SAVE_COOLDOWN = 3000; // 3 seconds
 
 const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
@@ -136,30 +138,7 @@ async function loadFromDrive() {
             headers: { Authorization: `Bearer ${accessToken}` }
         }
     );
-    if (res.status === 403) {
-
-        console.log("Token expired → refreshing");
-
-        // silently refresh token
-        await tokenClient.requestAccessToken({ prompt: "" });
-
-        const retry = await fetch(url, {
-            method: file ? "PATCH" : "POST",
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": `multipart/related; boundary=${boundary}`
-            },
-            body
-        });
-
-        if (!retry.ok) {
-            console.error("Retry failed");
-            return;
-        }
-
-        console.log("Saved to Drive (after token refresh)");
-        return;
-    }
+    
 
     if (!res.ok) {
         console.error("Drive save failed", res);
@@ -210,7 +189,7 @@ async function saveToDrive(data) {
         /* ⭐ ADD THIS BLOCK HERE */
         const now = Date.now();
 
-        if (now - lastDriveSaveTime < DRIVE_SAVE_COOLDOWN) {
+        if (now - window.lastDriveSaveTime < DRIVE_SAVE_COOLDOWN){
             console.log("Drive cooldown active → delaying save");
             pendingDriveSave = true;
             return;
@@ -252,7 +231,7 @@ async function saveToDrive(data) {
         }
 
         console.log("Saved to Drive");
-        lastDriveSaveTime = Date.now();
+        window.lastDriveSaveTime = Date.now();
 
     } finally {
 
