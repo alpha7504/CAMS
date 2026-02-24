@@ -129,6 +129,37 @@ async function loadFromDrive() {
             headers: { Authorization: `Bearer ${accessToken}` }
         }
     );
+    if (res.status === 403) {
+
+        console.log("Token expired → refreshing");
+
+        // silently refresh token
+        await tokenClient.requestAccessToken({ prompt: "" });
+
+        const retry = await fetch(url, {
+            method: file ? "PATCH" : "POST",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": `multipart/related; boundary=${boundary}`
+            },
+            body
+        });
+
+        if (!retry.ok) {
+            console.error("Retry failed");
+            return;
+        }
+
+        console.log("Saved to Drive (after token refresh)");
+        return;
+    }
+
+    if (!res.ok) {
+        console.error("Drive save failed", res);
+        return;
+    }
+
+    console.log("Saved to Drive");
 
     console.log("Loaded from Drive");
     return await res.json();
@@ -229,3 +260,23 @@ async function finishDriveConnection() {
 ====================================================== */
 
 window.addEventListener("load", initializeGoogle);
+
+
+document.addEventListener("visibilitychange", async () => {
+
+    if (document.visibilityState !== "visible") return;
+    if (!driveEnabled) return;
+
+    console.log("Tab became active → syncing");
+
+    const cloudData = await loadFromDrive();
+    if (!Array.isArray(cloudData)) return;
+
+    const merged = window.mergeActors(actors, cloudData);
+
+    actors.length = 0;
+    actors.push(...merged);
+
+    localStorage.setItem("actors", JSON.stringify(actors));
+    render();
+});
