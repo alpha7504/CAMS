@@ -44,11 +44,11 @@ function initializeGoogle() {
                 fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.email) localStorage.setItem("cams_user_hint", data.email);
-                })
-                .catch(() => console.log("Hint fetch failed"));
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.email) localStorage.setItem("cams_user_hint", data.email);
+                    })
+                    .catch(() => console.log("Hint fetch failed"));
 
                 await finishDriveConnection();
             }
@@ -60,9 +60,9 @@ function initializeGoogle() {
 
         if (wasConnected) {
             updateSyncStatus("Connecting...");
-            tokenClient.requestAccessToken({ 
-                prompt: "none", 
-                login_hint: userHint || undefined 
+            tokenClient.requestAccessToken({
+                prompt: "none",
+                login_hint: userHint || undefined
             });
         }
     });
@@ -257,49 +257,54 @@ function disconnectGoogle() {
 async function finishDriveConnection() {
     updateSyncStatus("Syncing...");
 
-    // Show correct buttons
+    // Update UI immediately
     document.getElementById("googleLoginBtn").style.display = "none";
     document.getElementById("disconnectGoogleBtn").style.display = "inline-block";
 
     // 1. Fetch data from Google Drive
     const cloudData = await loadFromDrive();
-    
+
     if (cloudData && Array.isArray(cloudData)) {
-        // 2. Merge cloud data into our local 'actors' array
-        // This uses the mergeActors function already in your file
+        // 2. Use the merge logic to combine local and cloud
         actors = mergeActors(actors, cloudData);
-        
-        // 3. Persist the merged list locally
+
+        // 3. Save merged data and refresh UI
         localStorage.setItem("actors", JSON.stringify(actors));
-        
-        // 4. Update the screen immediately
-        if (typeof render === "function") {
-            render();
-        }
+        if (typeof render === "function") render();
     }
 
     updateSyncStatus("Synced");
+
+    // Set persistence flag
     localStorage.setItem("cams_drive_connected", "1");
-    
-    // 5. Ensure cloud is updated with the latest merged state
+
+    // 4. Update cloud with merged results
     await saveToDrive(actors);
 }
 
+/* ===============================
+   AUTO-RESTORE SESSION (NO POPUPS)
+================================ */
 window.addEventListener("load", () => {
     initializeGoogle();
 
     const wasConnected = localStorage.getItem("cams_drive_connected");
     const userHint = localStorage.getItem("cams_user_hint");
 
+    // We only attempt background refresh IF we were already logged in
     if (wasConnected) {
-        updateSyncStatus("Connecting..."); // Let the user know we are trying
+        updateSyncStatus("Syncing...");
+
+        // Timeout allows GAPI to load fully before checking token
         setTimeout(() => {
             if (tokenClient) {
+                // 'prompt: none' is the modern way to stay logged in silently
+                // login_hint prevents the "Who are you?" account picker popup
                 tokenClient.requestAccessToken({
                     prompt: "none",
                     login_hint: userHint || undefined
                 });
             }
-        }, 1500);
+        }, 1000);
     }
 });

@@ -606,7 +606,7 @@ async function importActorFromURL() {
         actors.push(actor);
         nameDict[chinese] = english;
 
-        saveActors();
+        await saveActors();
         localStorage.setItem("nameDict", JSON.stringify(nameDict));
 
         render();
