@@ -656,24 +656,19 @@ function mergeActors(localActors, cloudActors) {
 
     const map = new Map();
 
-    // add local first
-    for (const actor of localActors) {
+    // 1️⃣ Cloud is the base truth
+    for (const actor of cloudActors) {
         map.set(actor.id, actor);
     }
 
-    // merge / overwrite with cloud versions
-    for (const actor of cloudActors) {
+    // 2️⃣ Keep newer local edits only
+    for (const local of localActors) {
 
-        if (!map.has(actor.id)) {
-            map.set(actor.id, actor);
-            continue;
-        }
+        const cloud = map.get(local.id);
+        if (!cloud) continue; // deleted in cloud → stay deleted
 
-        const local = map.get(actor.id);
-
-        // keep newest version
-        if ((actor.updatedAt || 0) > (local.updatedAt || 0)) {
-            map.set(actor.id, actor);
+        if ((local.updatedAt || 0) > (cloud.updatedAt || 0)) {
+            map.set(local.id, local);
         }
     }
 
