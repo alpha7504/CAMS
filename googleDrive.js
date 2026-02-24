@@ -173,11 +173,11 @@ async function finishDriveConnection() {
 
     showLoggedIn();
     updateSyncStatus("Syncing...");
-
     const cloudData = await loadFromDrive();
 
-    if (Array.isArray(cloudData)) {
+    if (Array.isArray(cloudData) && cloudData.length > 0) {
 
+        // merge cloud + local
         const merged = window.mergeActors(actors, cloudData);
 
         actors.length = 0;
@@ -185,9 +185,12 @@ async function finishDriveConnection() {
 
         localStorage.setItem("actors", JSON.stringify(actors));
         render();
-    }
-    else {
-        // first device upload
+
+    } else {
+
+        console.log("No cloud file found. Creating new one...");
+
+        // FIRST DEVICE → upload local database
         await saveToDrive(actors);
     }
 
