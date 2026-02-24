@@ -106,12 +106,16 @@ function disconnectGoogle() {
 
 async function findDataFile() {
 
-    gapi.client.drive.files.list({
+    const response = await gapi.client.drive.files.list({
         spaces: "appDataFolder",
         fields: "files(id,name)",
         supportsAllDrives: true
     });
-    return res.result.files.find(f => f.name === "data.json") || null;
+
+    const files = response.result.files || [];
+    console.log("Drive files:", files);
+
+    return files.find(file => file.name === "data.json") || null;
 }
 
 async function loadFromDrive() {
