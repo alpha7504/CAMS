@@ -117,7 +117,7 @@ async function findDataFile() {
 
     const response = await gapi.client.drive.files.list({
         spaces: "appDataFolder",
-        fields: "files(id,name,etag,modifiedTime)",
+        fields: "files(id,name,modifiedTime)",
         supportsAllDrives: true
     });
 
