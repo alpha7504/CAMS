@@ -4,6 +4,8 @@
 
 let driveSaveInProgress = false;
 let pendingDriveSave = false;
+let lastDriveSaveTime = 0;
+const DRIVE_SAVE_COOLDOWN = 3000; // 3 seconds
 
 const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
@@ -203,6 +205,14 @@ async function saveToDrive(data) {
             return;
         }
 
+        /* ⭐ ADD THIS BLOCK HERE */
+        const now = Date.now();
+
+        if (now - lastDriveSaveTime < DRIVE_SAVE_COOLDOWN) {
+            console.log("Drive cooldown active → delaying save");
+            pendingDriveSave = true;
+            return;
+        }
         let file = await findDataFile();
 
         const metadata = {
@@ -240,6 +250,7 @@ async function saveToDrive(data) {
         }
 
         console.log("Saved to Drive");
+        lastDriveSaveTime = Date.now();
 
     } finally {
 
