@@ -106,11 +106,11 @@ function disconnectGoogle() {
 
 async function findDataFile() {
 
-    const res = await gapi.client.drive.files.list({
+    gapi.client.drive.files.list({
         spaces: "appDataFolder",
-        fields: "files(id,name)"
+        fields: "files(id,name)",
+        supportsAllDrives: true
     });
-
     return res.result.files.find(f => f.name === "data.json") || null;
 }
 
@@ -154,8 +154,8 @@ async function saveToDrive(data) {
     );
 
     const url = file
-        ? `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=multipart`
-        : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+        ? `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=multipart&supportsAllDrives=true`
+        : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`;
 
     await fetch(url, {
         method: file ? "PATCH" : "POST",
