@@ -200,6 +200,28 @@ async function finishDriveConnection() {
     }
 
     updateSyncStatus("Synced");
+    if (!window.driveWatcher) {
+
+        window.driveWatcher = setInterval(async () => {
+
+            if (!driveEnabled) return;
+
+            const cloudData = await loadFromDrive();
+            if (!Array.isArray(cloudData)) return;
+
+            const merged =
+                window.mergeActors(actors, cloudData);
+
+            actors.length = 0;
+            actors.push(...merged);
+
+            localStorage.setItem("actors", JSON.stringify(actors));
+            render();
+
+            console.log("Background sync complete");
+
+        }, 30000); // every 30 seconds
+    }
 }
 
 /* ======================================================
