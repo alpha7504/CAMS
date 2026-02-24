@@ -333,6 +333,25 @@ async function finishDriveConnection() {
 
     // 4. Update cloud with merged results
     await saveToDrive(actors);
+    // refresh every 30 seconds while connected
+    if (!window.driveSyncInterval) {
+        window.driveSyncInterval = setInterval(async () => {
+            if (!driveEnabled) return;
+
+            const cloudData = await loadFromDrive();
+
+            if (Array.isArray(cloudData)) {
+
+                const merged = mergeActors(actors, cloudData);
+
+                actors.length = 0;
+                actors.push(...merged);
+
+                localStorage.setItem("actors", JSON.stringify(actors));
+                render();
+            }
+        }, 30000);
+    }
 }
 
 /* ===============================
@@ -342,7 +361,12 @@ window.addEventListener("load", async () => {
 
     initializeGoogle();
 
-    if (localStorage.getItem("cams_drive_connected")) {
-        await requestToken("");   // silent restore
+    await googleReady;
+
+    // try silent login FIRST
+    try {
+        await requestToken(""); // silent
+    } catch {
+        updateSyncStatus("Offline");
     }
 });
