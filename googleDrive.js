@@ -28,26 +28,21 @@ function initializeGoogle() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
+
+            // ⭐ THIS IS THE KEY
+            auto_select: true,
+
             callback: async (resp) => {
+
                 if (resp.error) {
                     updateSyncStatus("Offline");
                     return;
                 }
 
                 accessToken = resp.access_token;
-                driveReady = true;
                 driveEnabled = true;
 
-                // Capture email for silent login hint
-                try {
-                    const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                        headers: { Authorization: `Bearer ${accessToken}` }
-                    });
-                    const userData = await userRes.json();
-                    if (userData.email) localStorage.setItem("cams_user_hint", userData.email);
-                } catch (e) {
-                    console.log("Hint capture failed");
-                }
+                localStorage.setItem("cams_drive_connected", "1");
 
                 await finishDriveConnection();
             }
@@ -107,7 +102,7 @@ async function saveToDrive(data) {
             }
             throw new Error("Upload failed");
         }
-        
+
         console.log("Saved to Drive");
     } catch (err) {
         console.error("Save error", err);
@@ -344,25 +339,10 @@ async function finishDriveConnection() {
    AUTO-RESTORE SESSION (NO POPUPS)
 ================================ */
 window.addEventListener("load", () => {
+
     initializeGoogle();
 
-    const wasConnected = localStorage.getItem("cams_drive_connected");
-    const userHint = localStorage.getItem("cams_user_hint");
-
-    // We only attempt background refresh IF we were already logged in
-    if (wasConnected) {
-        updateSyncStatus("Syncing...");
-
-        // Timeout allows GAPI to load fully before checking token
-        setTimeout(() => {
-            if (tokenClient) {
-                // 'prompt: none' is the modern way to stay logged in silently
-                // login_hint prevents the "Who are you?" account picker popup
-                tokenClient.requestAccessToken({
-                    prompt: "none",
-                    login_hint: userHint || undefined
-                });
-            }
-        }, 1000);
+    if (localStorage.getItem("cams_drive_connected")) {
+        setTimeout(() => requestToken(""), 800);
     }
 });
