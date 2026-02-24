@@ -298,7 +298,7 @@ async function finishDriveConnection() {
     }
 
     updateSyncStatus("Synced");
-    if (!window.driveWatcher) {
+   /*if (!window.driveWatcher) {
 
         window.driveWatcher = setInterval(async () => {
 
@@ -319,7 +319,7 @@ async function finishDriveConnection() {
             console.log("Background sync complete");
 
         }, 30000); // every 30 seconds
-    }
+    }*/
 }
 
 /* ======================================================
