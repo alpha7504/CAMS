@@ -7,7 +7,7 @@ const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
 let tokenClient = null;
 let accessToken = null;
-let driveEnabled = false;
+window.driveEnabled = false;
 
 /* ======================================================
    UI HELPERS
@@ -50,13 +50,12 @@ function initializeGoogle() {
             callback: async (resp) => {
 
                 if (resp.error) {
-                    console.log("Not signed in");
                     showLoggedOut();
                     updateSyncStatus("Offline");
                     return;
                 }
 
-                console.log("✅ Google connected");
+                console.log("✅ Google session restored");
 
                 accessToken = resp.access_token;
                 driveEnabled = true;

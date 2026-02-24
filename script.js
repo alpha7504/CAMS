@@ -7,17 +7,8 @@ async function saveActors() {
     localStorage.setItem("actors", JSON.stringify(actors));
 
     // NEW: cloud sync only if connected
-    if (typeof driveEnabled !== "undefined" && driveEnabled) {
-
-        updateSyncStatus("Syncing...");
-
-        try {
-            await saveToDrive(actors);
-            updateSyncStatus("Synced");
-        } catch (e) {
-            console.error("Drive save failed", e);
-            updateSyncStatus("Sync failed");
-        }
+    if (window.driveEnabled) {
+        saveToDrive(actors);
     }
 }
 let sortMode =
