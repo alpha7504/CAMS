@@ -657,10 +657,39 @@ function getSortedActors() {
     return list;
 }
 
-/* ===============================
-   RENDER
-================================ */
+/* ======================================================
+   MERGE LOCAL + CLOUD ACTORS
+====================================================== */
 
+function mergeActors(localActors, cloudActors) {
+
+    const map = new Map();
+
+    // add local first
+    for (const actor of localActors) {
+        map.set(actor.id, actor);
+    }
+
+    // merge / overwrite with cloud versions
+    for (const actor of cloudActors) {
+
+        if (!map.has(actor.id)) {
+            map.set(actor.id, actor);
+            continue;
+        }
+
+        const local = map.get(actor.id);
+
+        // keep newest version
+        if ((actor.updatedAt || 0) > (local.updatedAt || 0)) {
+            map.set(actor.id, actor);
+        }
+    }
+
+    return Array.from(map.values());
+}
+
+window.mergeActors = mergeActors;
 /* ===============================
    RENDER
 ================================ */

@@ -179,7 +179,7 @@ async function finishDriveConnection() {
 
     if (Array.isArray(cloudData)) {
 
-        const merged = mergeActors(actors, cloudData);
+        const merged = window.mergeActors(actors, cloudData);
 
         actors.length = 0;
         actors.push(...merged);
