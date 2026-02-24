@@ -8,7 +8,7 @@ async function saveActors() {
 
     // NEW: cloud sync only if connected
     if (window.driveEnabled) {
-        saveToDrive(actors);
+        window.scheduleDriveSave();
     }
 }
 let sortMode =

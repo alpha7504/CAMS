@@ -2,6 +2,9 @@
    CAMS Google Drive Sync (Clean Architecture)
 ====================================================== */
 
+let driveSaveInProgress = false;
+let pendingDriveSave = false;
+
 const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 
@@ -165,40 +168,90 @@ async function loadFromDrive() {
     return await res.json();
 }
 
+/* ======================================================
+   DRIVE SAVE DEBOUNCE
+====================================================== */
+
+let saveTimer = null;
+
+function scheduleDriveSave() {
+
+    clearTimeout(saveTimer);
+
+    saveTimer = setTimeout(() => {
+        console.log("Debounced save → Drive");
+        saveToDrive(actors);
+    }, 1500);
+}
+
+// expose globally so script.js can call it
+window.scheduleDriveSave = scheduleDriveSave;
+
 async function saveToDrive(data) {
 
-    if (!driveEnabled || !accessToken) return;
+    if (driveSaveInProgress) {
+        pendingDriveSave = true;
+        return;
+    }
 
-    let file = await findDataFile();
+    driveSaveInProgress = true;
 
-    const metadata = {
-        name: "data.json",
-        parents: ["appDataFolder"]
-    };
+    try {
 
-    const form = new FormData();
+        if (!driveEnabled || !accessToken) {
+            console.log("Drive not ready, skipping save");
+            return;
+        }
 
-    form.append(
-        "metadata",
-        new Blob([JSON.stringify(metadata)], { type: "application/json" })
-    );
+        let file = await findDataFile();
 
-    form.append(
-        "file",
-        new Blob([JSON.stringify(data)], { type: "application/json" })
-    );
+        const metadata = {
+            name: "data.json",
+            parents: ["appDataFolder"]
+        };
 
-    const url = file
-        ? `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=multipart&supportsAllDrives=true`
-        : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`;
+        const form = new FormData();
 
-    await fetch(url, {
-        method: file ? "PATCH" : "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
-        body: form
-    });
+        form.append(
+            "metadata",
+            new Blob([JSON.stringify(metadata)], { type: "application/json" })
+        );
 
-    console.log("Saved to Drive");
+        form.append(
+            "file",
+            new Blob([JSON.stringify(data)], { type: "application/json" })
+        );
+
+        const url = file
+            ? `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=multipart&supportsAllDrives=true`
+            : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`;
+
+        const res = await fetch(url, {
+            method: file ? "PATCH" : "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            },
+            body: form
+        });
+
+        if (!res.ok) {
+            console.error("Drive save failed:", res.status);
+            return;
+        }
+
+        console.log("Saved to Drive");
+
+    } finally {
+
+        // ⭐ ALWAYS release lock
+        driveSaveInProgress = false;
+
+        if (pendingDriveSave) {
+            pendingDriveSave = false;
+            console.log("Running queued save...");
+            saveToDrive(actors);
+        }
+    }
 }
 
 /* ======================================================
