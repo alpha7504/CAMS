@@ -117,7 +117,7 @@ async function findDataFile() {
 
     const response = await gapi.client.drive.files.list({
         spaces: "appDataFolder",
-        fields: "files(id,name)",
+        fields: "files(id,name,etag,modifiedTime)",
         supportsAllDrives: true
     });
 
@@ -138,7 +138,7 @@ async function loadFromDrive() {
             headers: { Authorization: `Bearer ${accessToken}` }
         }
     );
-    
+
 
     if (!res.ok) {
         console.error("Drive save failed", res);
@@ -189,7 +189,7 @@ async function saveToDrive(data) {
         /* ⭐ ADD THIS BLOCK HERE */
         const now = Date.now();
 
-        if (now - window.lastDriveSaveTime < DRIVE_SAVE_COOLDOWN){
+        if (now - window.lastDriveSaveTime < DRIVE_SAVE_COOLDOWN) {
             console.log("Drive cooldown active → delaying save");
             pendingDriveSave = true;
             return;
@@ -201,28 +201,24 @@ async function saveToDrive(data) {
             parents: ["appDataFolder"]
         };
 
-        const form = new FormData();
+        const boundary = "cams_boundary";
 
-        form.append(
-            "metadata",
-            new Blob([JSON.stringify(metadata)], { type: "application/json" })
-        );
-
-        form.append(
-            "file",
-            new Blob([JSON.stringify(data)], { type: "application/json" })
-        );
-
-        const url = file
-            ? `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=multipart&supportsAllDrives=true`
-            : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`;
+        const body =
+            `--${boundary}\r\n` +
+            "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+            JSON.stringify(metadata) + "\r\n" +
+            `--${boundary}\r\n` +
+            "Content-Type: application/json\r\n\r\n" +
+            JSON.stringify(data) + "\r\n" +
+            `--${boundary}--`;
 
         const res = await fetch(url, {
             method: file ? "PATCH" : "POST",
             headers: {
-                Authorization: `Bearer ${accessToken}`
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": `multipart/related; boundary=${boundary}`
             },
-            body: form
+            body
         });
 
         if (!res.ok) {
