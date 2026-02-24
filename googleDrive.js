@@ -21,11 +21,13 @@ window.driveEnabled = false;
 function showLoggedIn() {
     googleLoginBtn.style.display = "none";
     disconnectGoogleBtn.style.display = "inline-block";
+    manualSyncBtn.style.display = "inline-block";
 }
 
 function showLoggedOut() {
     googleLoginBtn.style.display = "inline-block";
     disconnectGoogleBtn.style.display = "none";
+    manualSyncBtn.style.display = "none";
 }
 
 function updateSyncStatus(text) {
@@ -320,6 +322,37 @@ async function finishDriveConnection() {
 }
 
 /* ======================================================
+   MANUAL SYNC
+====================================================== */
+
+async function manualDriveSync() {
+
+    if (!driveEnabled) return;
+
+    updateSyncStatus("Syncing...");
+
+    console.log("Manual sync started");
+
+    const cloudData = await loadFromDrive();
+    if (!Array.isArray(cloudData)) {
+        updateSyncStatus("Synced");
+        return;
+    }
+
+    const merged = window.mergeActors(actors, cloudData);
+
+    actors.length = 0;
+    actors.push(...merged);
+
+    localStorage.setItem("actors", JSON.stringify(actors));
+    render();
+
+    updateSyncStatus("Synced");
+
+    console.log("Manual sync complete");
+}
+
+/* ======================================================
    AUTO START
 ====================================================== */
 
@@ -343,4 +376,8 @@ document.addEventListener("visibilitychange", async () => {
 
     localStorage.setItem("actors", JSON.stringify(actors));
     render();
+});
+document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("manualSyncBtn");
+    if (btn) btn.onclick = manualDriveSync;
 });
