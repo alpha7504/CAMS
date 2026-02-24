@@ -1,7 +1,10 @@
 /* ================================
    CAMS Google Drive Storage
 ================================ */
-
+let googleReadyResolve;
+const googleReady = new Promise(res => {
+    googleReadyResolve = res;
+});
 const CLIENT_ID = "409554142750-06633a3io1pl5pdjh35a8hl097ipj171.apps.googleusercontent.com";
 // Added email scope for the login_hint
 const SCOPES = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email";
@@ -28,10 +31,7 @@ function initializeGoogle() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
             scope: SCOPES,
-
-            // ⭐ THIS IS THE KEY
             auto_select: true,
-
             callback: async (resp) => {
 
                 if (resp.error) {
@@ -47,6 +47,9 @@ function initializeGoogle() {
                 await finishDriveConnection();
             }
         });
+
+        // ⭐ SIGNAL GOOGLE IS READY
+        googleReadyResolve();
 
         const wasConnected = localStorage.getItem("cams_drive_connected");
         const userHint = localStorage.getItem("cams_user_hint");
@@ -127,15 +130,12 @@ async function saveToDriveNew(data) {
    Login
 -------------------------------- */
 
-function requestToken(promptType = "") {
+async function requestToken(promptType = "") {
 
-    if (!tokenClient) {
-        console.error("Token client not ready");
-        return;
-    }
+    await googleReady;   // wait until tokenClient exists
 
     tokenClient.requestAccessToken({
-        prompt: promptType   // "" = silent, "consent" = popup
+        prompt: promptType
     });
 }
 
@@ -338,11 +338,11 @@ async function finishDriveConnection() {
 /* ===============================
    AUTO-RESTORE SESSION (NO POPUPS)
 ================================ */
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
 
     initializeGoogle();
 
     if (localStorage.getItem("cams_drive_connected")) {
-        setTimeout(() => requestToken(""), 800);
+        await requestToken("");   // silent restore
     }
 });
