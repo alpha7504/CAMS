@@ -203,8 +203,8 @@ async function saveToDrive(data) {
 
         /* ✅ ADD THIS (MISSING URL) */
         const url = file
-            ? `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=multipart&supportsAllDrives=true`
-            : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`;
+            ? `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=multipart&supportsAllDrives=true&includeItemsFromAllDrives=true`
+            : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&includeItemsFromAllDrives=true`;
 
         const boundary = "cams_boundary";
 
