@@ -376,27 +376,3 @@ async function manualDriveSync() {
 ====================================================== */
 
 window.addEventListener("load", initializeGoogle);
-
-
-document.addEventListener("visibilitychange", async () => {
-
-    if (document.visibilityState !== "visible") return;
-    if (!driveEnabled) return;
-
-    console.log("Tab became active → syncing");
-
-    const cloudData = await loadFromDrive();
-    if (!Array.isArray(cloudData)) return;
-
-    const merged = window.mergeActors(actors, cloudData);
-
-    actors.length = 0;
-    actors.push(...merged);
-
-    localStorage.setItem("actors", JSON.stringify(actors));
-    render();
-});
-document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("manualSyncBtn");
-    if (btn) btn.onclick = manualDriveSync;
-});
