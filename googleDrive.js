@@ -15,6 +15,14 @@ const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 let tokenClient = null;
 let accessToken = null;
 window.driveEnabled = false;
+/* ===============================
+   CLOUD SAFETY GUARD
+================================ */
+
+let lastKnownCloudCount =
+    parseInt(localStorage.getItem("cams_last_cloud_count")) || 0;
+
+let initialCloudLoadFinished = false;
 
 /* ======================================================
    UI HELPERS
@@ -166,7 +174,24 @@ async function loadFromDrive() {
     console.log("Saved to Drive");
 
     console.log("Loaded from Drive");
-    return await res.json();
+
+    const cloudData = await res.json();
+
+    /* ===============================
+       CLOUD SAFETY: remember cloud size
+    ================================ */
+    if (Array.isArray(cloudData)) {
+        lastKnownCloudCount = cloudData.length;
+
+        localStorage.setItem(
+            "cams_last_cloud_count",
+            lastKnownCloudCount
+        );
+
+        initialCloudLoadFinished = true;
+    }
+
+    return cloudData;
 }
 
 /* ======================================================
@@ -204,6 +229,34 @@ async function saveToDrive(data) {
             return;
         }
 
+        /* ===============================
+   CLOUD SAFETY CHECK
+================================ */
+
+        const localCount = data.length;
+
+        // do not upload before cloud was loaded once
+        if (!initialCloudLoadFinished) {
+            console.warn("Upload blocked: cloud not loaded yet");
+            return;
+        }
+
+        // detect sudden data loss
+        if (
+            lastKnownCloudCount > 20 &&
+            localCount < lastKnownCloudCount * 0.5
+        ) {
+            console.error("⚠️ Possible local data loss detected");
+
+            alert(
+                "CAMS detected possible browser data loss.\n\n" +
+                "Upload stopped to protect cloud data.\n" +
+                "Please reload and run manual sync."
+            );
+
+            updateSyncStatus("Cloud protection active");
+            return;
+        }
         /* ⭐ ADD THIS BLOCK HERE */
         const now = Date.now();
 
@@ -272,6 +325,15 @@ async function saveToDrive(data) {
 
         console.log("Saved to Drive");
         window.lastDriveSaveTime = Date.now();
+        /* ===============================
+        UPDATE CLOUD SIZE AFTER SAVE
+        ================================ */
+        lastKnownCloudCount = data.length;
+
+        localStorage.setItem(
+            "cams_last_cloud_count",
+            lastKnownCloudCount
+        );
 
     } finally {
 
