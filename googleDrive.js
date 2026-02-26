@@ -376,3 +376,19 @@ async function manualDriveSync() {
 ====================================================== */
 
 window.addEventListener("load", initializeGoogle);
+
+/* ======================================================
+   MANUAL SYNC BUTTON BINDING
+====================================================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const syncBtn = document.getElementById("manualSyncBtn");
+
+    if (!syncBtn) {
+        console.warn("Manual sync button not found");
+        return;
+    }
+
+    syncBtn.addEventListener("click", manualDriveSync);
+});
